@@ -1,5 +1,5 @@
-/icons	icons.html
-/	index.html
-/blog	blog.html
-/app	app.html
-/swipe	app.html
+/icons    /icons.html    200
+/         /index.html    200
+/blog     /blog.html     200
+/app      /app.html      200
+/swipe    /app.html      200
