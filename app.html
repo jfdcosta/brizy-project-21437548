@@ -1,0 +1,1013 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no" />
+<meta name="theme-color" content="#0b0f14" media="(prefers-color-scheme: dark)" />
+<meta name="theme-color" content="#f7f8fa" media="(prefers-color-scheme: light)" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+<meta name="mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-title" content="PhotoSwipe" />
+<meta name="description" content="A mobile-first photo gallery that swipes like Tinder — left to trash, right to keep. Connect iCloud, Google Photos, OneDrive or your local library." />
+<link rel="manifest" href="/assets/photoswipe/manifest.webmanifest" />
+<link rel="icon" href="data:image/svg+xml;utf8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%23111827'/%3E%3Cpath d='M14 22c0-4 3-7 7-7h22c4 0 7 3 7 7v20c0 4-3 7-7 7H21c-4 0-7-3-7-7V22z' fill='none' stroke='%2360a5fa' stroke-width='3'/%3E%3Ccircle cx='24' cy='28' r='4' fill='%23fbbf24'/%3E%3Cpath d='M16 44l10-12 8 8 6-4 8 8v0' fill='none' stroke='%2334d399' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E" />
+<link rel="apple-touch-icon" href="data:image/svg+xml;utf8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%23111827'/%3E%3Cpath d='M14 22c0-4 3-7 7-7h22c4 0 7 3 7 7v20c0 4-3 7-7 7H21c-4 0-7-3-7-7V22z' fill='none' stroke='%2360a5fa' stroke-width='3'/%3E%3Ccircle cx='24' cy='28' r='4' fill='%23fbbf24'/%3E%3Cpath d='M16 44l10-12 8 8 6-4 8 8v0' fill='none' stroke='%2334d399' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E" />
+<title>PhotoSwipe — swipe left to trash, right to keep</title>
+<style>
+  :root{
+    --bg:#0b0f14;
+    --surface:#111827;
+    --surface-2:#0f172a;
+    --elev:#1f2937;
+    --text:#e5e7eb;
+    --muted:#94a3b8;
+    --border:rgba(255,255,255,.08);
+    --accent:#60a5fa;
+    --danger:#ef4444;
+    --success:#22c55e;
+    --warning:#f59e0b;
+    --shadow: 0 20px 60px rgba(0,0,0,.55), 0 2px 8px rgba(0,0,0,.35);
+    --radius: 22px;
+    --safe-top: env(safe-area-inset-top, 0px);
+    --safe-bottom: env(safe-area-inset-bottom, 0px);
+    --font: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  }
+  @media (prefers-color-scheme: light){
+    :root{
+      --bg:#f4f6fb;
+      --surface:#ffffff;
+      --surface-2:#f9fafb;
+      --elev:#ffffff;
+      --text:#0f172a;
+      --muted:#64748b;
+      --border:rgba(15,23,42,.08);
+      --shadow: 0 20px 60px rgba(15,23,42,.18), 0 2px 8px rgba(15,23,42,.06);
+    }
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  html,body{height:100%}
+  body{
+    margin:0;
+    font-family:var(--font);
+    color:var(--text);
+    background:
+      radial-gradient(1200px 600px at 10% -10%, rgba(96,165,250,.18), transparent 60%),
+      radial-gradient(1000px 500px at 100% 110%, rgba(34,197,94,.14), transparent 60%),
+      var(--bg);
+    -webkit-font-smoothing:antialiased;
+    overscroll-behavior:none;
+    overflow:hidden;
+  }
+  #app{position:fixed;inset:0;display:flex;flex-direction:column;overflow:hidden;padding-top:var(--safe-top);padding-bottom:var(--safe-bottom)}
+
+  /* ---------- Top bar ---------- */
+  .topbar{
+    display:flex;align-items:center;gap:10px;
+    padding:10px 14px;
+    position:relative;z-index:5;
+  }
+  .topbar h1{font-size:16px;font-weight:600;margin:0;letter-spacing:.2px;flex:1;text-align:center;color:var(--text)}
+  .icon-btn{
+    width:40px;height:40px;border-radius:12px;border:1px solid var(--border);
+    background:var(--surface); color:var(--text);
+    display:inline-flex;align-items:center;justify-content:center;
+    cursor:pointer; transition: transform .08s ease, background .15s;
+  }
+  .icon-btn:active{transform:scale(.94)}
+  .icon-btn svg{width:20px;height:20px}
+  .progress-pill{
+    min-width:64px; text-align:center; padding:6px 12px; border-radius:999px;
+    background:var(--surface); border:1px solid var(--border); font-size:12px; color:var(--muted); font-variant-numeric:tabular-nums;
+  }
+
+  /* ---------- Views ---------- */
+  .view{flex:1;min-height:0;display:none;flex-direction:column}
+  .view.active{display:flex}
+
+  /* ---------- Home ---------- */
+  #view-home{overflow-y:auto;padding:8px 16px 24px}
+  .hero{padding:24px 4px 8px;text-align:center}
+  .hero .logo{
+    width:64px;height:64px;margin:0 auto 14px;border-radius:20px;
+    background:linear-gradient(135deg,#3b82f6,#22c55e);
+    display:flex;align-items:center;justify-content:center;box-shadow:var(--shadow)
+  }
+  .hero .logo svg{width:36px;height:36px;color:#fff}
+  .hero h2{font-size:26px;margin:0 0 6px;font-weight:700;letter-spacing:-.02em}
+  .hero p{margin:0;color:var(--muted);font-size:14px;line-height:1.5;max-width:36ch;margin-left:auto;margin-right:auto}
+  .section-title{font-size:12px;text-transform:uppercase;letter-spacing:.12em;color:var(--muted);margin:22px 6px 10px;font-weight:600}
+  .sources{display:grid;grid-template-columns:1fr;gap:10px}
+  .source{
+    display:flex;align-items:center;gap:14px;
+    padding:14px;border-radius:16px;border:1px solid var(--border);
+    background:var(--surface);cursor:pointer;
+    transition: transform .08s ease, background .15s, border-color .15s;
+  }
+  .source:active{transform:scale(.985)}
+  .source .badge{
+    width:44px;height:44px;border-radius:12px;flex:0 0 44px;
+    display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;
+  }
+  .source .meta{flex:1;min-width:0}
+  .source .meta .name{font-size:15px;font-weight:600;line-height:1.2}
+  .source .meta .desc{font-size:12px;color:var(--muted);margin-top:2px;line-height:1.35}
+  .source .cta{font-size:12px;color:var(--accent);font-weight:600}
+  .source .cta.warn{color:var(--warning)}
+  .source[data-status="connected"] .cta{color:var(--success)}
+
+  .brand-icloud{background:linear-gradient(135deg,#38bdf8,#818cf8)}
+  .brand-google{background:linear-gradient(135deg,#ea4335,#fbbc04 55%,#34a853 90%)}
+  .brand-onedrive{background:linear-gradient(135deg,#0078d4,#28a8ea)}
+  .brand-local{background:linear-gradient(135deg,#64748b,#94a3b8)}
+  .brand-demo{background:linear-gradient(135deg,#a855f7,#ec4899)}
+
+  .note{
+    margin-top:16px; padding:12px 14px; border-radius:14px; border:1px dashed var(--border);
+    background:var(--surface-2); color:var(--muted); font-size:12px; line-height:1.5;
+  }
+  .foot{margin:22px 0 10px;text-align:center;color:var(--muted);font-size:11px}
+  .foot a{color:var(--muted)}
+
+  /* ---------- Deck ---------- */
+  #view-deck{position:relative}
+  .deck-wrap{flex:1;min-height:0;position:relative;padding:6px 14px 4px}
+  .deck{position:absolute;inset:6px 14px 4px;display:flex;align-items:center;justify-content:center}
+  .card{
+    position:absolute; inset:0; border-radius:var(--radius); background:var(--elev);
+    box-shadow:var(--shadow); overflow:hidden; will-change:transform, opacity;
+    touch-action:none; user-select:none; -webkit-user-drag:none;
+    display:flex; align-items:center; justify-content:center;
+  }
+  .card img{
+    width:100%;height:100%;object-fit:cover;pointer-events:none;-webkit-user-drag:none;
+    background:#111; display:block;
+  }
+  .card .card-meta{
+    position:absolute;left:0;right:0;bottom:0;padding:16px 18px;
+    background:linear-gradient(to top, rgba(0,0,0,.75), rgba(0,0,0,0));
+    color:#fff; font-size:13px; display:flex; align-items:center; gap:10px;
+  }
+  .card .card-meta .name{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .card .card-meta .src{opacity:.85;font-size:11px;padding:3px 8px;border-radius:999px;background:rgba(255,255,255,.14)}
+  .card .stamp{
+    position:absolute; top:24px; padding:8px 14px; border-radius:10px;
+    font-weight:800; letter-spacing:.14em; font-size:14px; text-transform:uppercase;
+    border:3px solid currentColor; background:rgba(0,0,0,.35); opacity:0; transition:opacity .1s ease;
+    text-shadow:0 1px 0 rgba(0,0,0,.4);
+  }
+  .card .stamp.trash{left:20px; color:#f87171; transform:rotate(-14deg)}
+  .card .stamp.keep {right:20px; color:#4ade80; transform:rotate(14deg)}
+
+  .card.throw-left{ transition: transform .35s cubic-bezier(.2,.7,.2,1), opacity .35s ease; transform: translate(-140vw, 20vh) rotate(-30deg) !important; opacity:0 }
+  .card.throw-right{transition: transform .35s cubic-bezier(.2,.7,.2,1), opacity .35s ease; transform: translate( 140vw, 20vh) rotate( 30deg) !important; opacity:0 }
+  .card.snap-back{ transition: transform .28s cubic-bezier(.2,.7,.2,1); }
+
+  .empty{
+    position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center;
+    color:var(--muted); text-align:center; padding:24px;
+  }
+  .empty svg{width:56px;height:56px;color:var(--muted);margin-bottom:12px}
+  .empty h3{margin:0 0 6px;color:var(--text);font-weight:600}
+  .empty p{margin:0;font-size:13px;line-height:1.5;max-width:32ch}
+
+  /* ---------- Action bar ---------- */
+  .actions{
+    display:flex;align-items:center;justify-content:center;gap:18px;
+    padding:14px 16px 18px;
+  }
+  .fab{
+    width:60px;height:60px;border-radius:50%;
+    display:inline-flex;align-items:center;justify-content:center;
+    border:1px solid var(--border); background:var(--surface); color:var(--text);
+    box-shadow:0 10px 24px rgba(0,0,0,.28);
+    cursor:pointer; transition: transform .08s ease, background .15s;
+  }
+  .fab:active{transform:scale(.92)}
+  .fab svg{width:26px;height:26px}
+  .fab.trash{background:linear-gradient(180deg,#fee2e2,#fecaca); color:#b91c1c}
+  .fab.keep{background:linear-gradient(180deg,#dcfce7,#bbf7d0); color:#15803d}
+  .fab.small{width:48px;height:48px}
+  .fab.small svg{width:20px;height:20px}
+  @media (prefers-color-scheme: dark){
+    .fab.trash{background:linear-gradient(180deg,#7f1d1d,#991b1b);color:#fecaca}
+    .fab.keep{background:linear-gradient(180deg,#14532d,#166534);color:#bbf7d0}
+  }
+
+  /* ---------- Trash view ---------- */
+  #view-trash{padding:8px 14px 14px}
+  .trash-head{display:flex;align-items:center;gap:10px;padding:6px 4px 12px}
+  .trash-head .count{font-size:12px;color:var(--muted);flex:1;text-align:right}
+  .trash-grid{
+    display:grid;grid-template-columns:repeat(3,1fr);gap:8px;
+    overflow-y:auto; padding-bottom:110px;
+  }
+  .trash-tile{position:relative;aspect-ratio:1/1;border-radius:12px;overflow:hidden;background:var(--elev);border:1px solid var(--border)}
+  .trash-tile img{width:100%;height:100%;object-fit:cover}
+  .trash-tile .restore{
+    position:absolute;top:6px;right:6px;width:28px;height:28px;border-radius:8px;border:none;
+    background:rgba(0,0,0,.55);color:#fff;display:flex;align-items:center;justify-content:center;cursor:pointer;
+  }
+  .trash-tile .restore svg{width:14px;height:14px}
+  .trash-tile .src{
+    position:absolute;left:6px;bottom:6px;font-size:10px;color:#fff;
+    padding:2px 6px;border-radius:999px;background:rgba(0,0,0,.55);
+  }
+  .trash-bar{
+    position:absolute;left:0;right:0;bottom:0;padding:12px 14px calc(14px + var(--safe-bottom));
+    background:linear-gradient(to top, var(--bg) 60%, transparent);
+    display:flex;gap:10px;
+  }
+  .btn{
+    flex:1;padding:14px 16px;border-radius:14px;border:1px solid var(--border);
+    background:var(--surface);color:var(--text);font-size:14px;font-weight:600;cursor:pointer;
+    display:inline-flex;align-items:center;justify-content:center;gap:8px;
+  }
+  .btn.primary{background:var(--danger);color:#fff;border-color:transparent}
+  .btn.primary:disabled{opacity:.5;cursor:not-allowed}
+  .btn.ghost{background:transparent}
+
+  /* ---------- Sheet / modal ---------- */
+  .sheet-scrim{
+    position:fixed; inset:0; background:rgba(0,0,0,.5); backdrop-filter:blur(4px);
+    display:none; align-items:flex-end; justify-content:center; z-index:50;
+  }
+  .sheet-scrim.open{display:flex}
+  .sheet{
+    width:100%; max-width:520px; background:var(--surface); color:var(--text);
+    border-radius:20px 20px 0 0; padding:18px 18px calc(18px + var(--safe-bottom));
+    box-shadow:0 -20px 60px rgba(0,0,0,.4);
+    transform:translateY(20px); animation: sheetIn .22s ease forwards;
+  }
+  @keyframes sheetIn{ to { transform:translateY(0) } }
+  .sheet h3{margin:0 0 6px;font-size:18px}
+  .sheet p{margin:0 0 14px;color:var(--muted);font-size:13px;line-height:1.5}
+  .sheet .row{display:flex;gap:10px}
+  .sheet .row .btn{flex:1}
+  .sheet ol{margin:0 0 14px;padding-left:20px;color:var(--muted);font-size:13px;line-height:1.55}
+
+  /* ---------- Toast ---------- */
+  .toast{
+    position:fixed; left:50%; bottom:calc(20px + var(--safe-bottom)); transform:translateX(-50%);
+    background:var(--elev); color:var(--text); border:1px solid var(--border);
+    padding:10px 14px; border-radius:12px; font-size:13px; z-index:60; box-shadow:var(--shadow);
+    display:flex; align-items:center; gap:12px; max-width:calc(100vw - 32px);
+  }
+  .toast .link{color:var(--accent);cursor:pointer;font-weight:600}
+
+  /* utility */
+  .hide{display:none !important}
+  .kb{font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size:12px; background:var(--surface-2); padding:1px 6px; border-radius:6px; border:1px solid var(--border)}
+</style>
+</head>
+<body>
+
+<div id="app">
+
+  <!-- ============ HOME ============ -->
+  <section id="view-home" class="view active" aria-label="Home">
+    <div class="topbar">
+      <span class="icon-btn" aria-hidden="true" style="visibility:hidden"></span>
+      <h1>PhotoSwipe</h1>
+      <button class="icon-btn" id="btn-info" aria-label="About">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><circle cx="12" cy="8" r="1" fill="currentColor" stroke="none"/></svg>
+      </button>
+    </div>
+
+    <div class="hero">
+      <div class="logo" aria-hidden="true">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="3" y="4" width="18" height="16" rx="3"/>
+          <circle cx="9" cy="10" r="2"/>
+          <path d="M3 17l5-6 4 4 3-2 6 6"/>
+        </svg>
+      </div>
+      <h2>Clean your camera roll,<br/>one swipe at a time.</h2>
+      <p>Connect a photo source, then swipe <b>left</b> to trash and <b>right</b> to keep. Trash is reviewed before anything is deleted.</p>
+    </div>
+
+    <div class="section-title">Connect a source</div>
+    <div class="sources" id="sources">
+      <div class="source" data-source="local">
+        <div class="badge brand-local">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="7" width="20" height="14" rx="3"/><path d="M8 7V5a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><circle cx="12" cy="14" r="3"/></svg>
+        </div>
+        <div class="meta"><div class="name">Local Library</div><div class="desc">Pick photos from this device</div></div>
+        <div class="cta">Open</div>
+      </div>
+
+      <div class="source" data-source="google">
+        <div class="badge brand-google">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-2.64-6.36"/><path d="M21 4v6h-6"/></svg>
+        </div>
+        <div class="meta"><div class="name">Google Photos</div><div class="desc">OAuth via Google Identity Services</div></div>
+        <div class="cta warn">Connect</div>
+      </div>
+
+      <div class="source" data-source="onedrive">
+        <div class="badge brand-onedrive">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 17a4 4 0 0 1 1-7.87A6 6 0 0 1 17 8a4 4 0 0 1 1 8H4z"/></svg>
+        </div>
+        <div class="meta"><div class="name">OneDrive</div><div class="desc">Microsoft Graph — deletion supported</div></div>
+        <div class="cta warn">Connect</div>
+      </div>
+
+      <div class="source" data-source="icloud">
+        <div class="badge brand-icloud">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 20H6a4 4 0 0 1-1-7.87A6 6 0 0 1 17 11a3 3 0 0 1 0 9z"/></svg>
+        </div>
+        <div class="meta"><div class="name">iCloud Photos</div><div class="desc">Import via a Shared Album link</div></div>
+        <div class="cta warn">Connect</div>
+      </div>
+
+      <div class="source" data-source="demo">
+        <div class="badge brand-demo">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M9 10a3 3 0 0 1 6 0c0 2-3 2-3 4"/><circle cx="12" cy="17" r="1" fill="currentColor" stroke="none"/></svg>
+        </div>
+        <div class="meta"><div class="name">Try the Demo</div><div class="desc">30 sample photos from Picsum</div></div>
+        <div class="cta">Start</div>
+      </div>
+    </div>
+
+    <div class="note">
+      <b>Heads-up:</b> web apps can't delete photos on your device directly. Trashed photos are collected into a review list you can export or use to delete inside your source app. OneDrive deletion works through the Graph API once connected.
+    </div>
+
+    <div class="foot">Built as a mobile-first PWA · <a id="link-github" href="#" onclick="event.preventDefault()">Add to Home Screen</a> for the full app feel</div>
+
+    <input type="file" id="file-input" accept="image/*" multiple style="display:none" />
+  </section>
+
+  <!-- ============ DECK ============ -->
+  <section id="view-deck" class="view" aria-label="Swipe deck">
+    <div class="topbar">
+      <button class="icon-btn" id="btn-back" aria-label="Back">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
+      </button>
+      <h1 id="deck-title">Swipe</h1>
+      <button class="icon-btn" id="btn-trash-open" aria-label="Trash">
+        <span class="progress-pill" id="progress">0 / 0</span>
+      </button>
+    </div>
+
+    <div class="deck-wrap">
+      <div class="deck" id="deck" aria-live="polite"></div>
+      <div class="empty hide" id="empty">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M20 6L9 17l-5-5"/>
+        </svg>
+        <h3>All done!</h3>
+        <p id="empty-desc">You've reviewed every photo. Open Trash to confirm deletions.</p>
+      </div>
+    </div>
+
+    <div class="actions">
+      <button class="fab small" id="btn-undo" aria-label="Undo">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 3-6.7"/><path d="M3 4v6h6"/></svg>
+      </button>
+      <button class="fab trash" id="btn-trash" aria-label="Trash">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6L6 18"/><path d="M6 6l12 12"/></svg>
+      </button>
+      <button class="fab keep" id="btn-keep" aria-label="Keep">
+        <svg viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="1"><path d="M12 21s-7-4.35-9.5-8.5C.9 9.4 2.9 5 6.6 5c2 0 3.4 1.1 4.4 2.6C12 6.1 13.4 5 15.4 5c3.7 0 5.7 4.4 4.1 7.5C19 16.65 12 21 12 21z"/></svg>
+      </button>
+      <button class="fab small" id="btn-review" aria-label="Review trash">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/></svg>
+      </button>
+    </div>
+  </section>
+
+  <!-- ============ TRASH ============ -->
+  <section id="view-trash" class="view" aria-label="Trash review">
+    <div class="topbar">
+      <button class="icon-btn" id="btn-trash-back" aria-label="Back">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
+      </button>
+      <h1>Trash</h1>
+      <span class="icon-btn" aria-hidden="true" style="visibility:hidden"></span>
+    </div>
+    <div class="trash-head">
+      <button class="btn ghost" id="btn-restore-all" style="flex:0 0 auto;padding:8px 12px">Restore all</button>
+      <div class="count" id="trash-count">0 items</div>
+    </div>
+    <div class="trash-grid" id="trash-grid"></div>
+    <div class="trash-bar">
+      <button class="btn" id="btn-export">Export list</button>
+      <button class="btn primary" id="btn-delete">Delete forever</button>
+    </div>
+  </section>
+
+</div>
+
+<!-- Bottom sheet -->
+<div class="sheet-scrim" id="sheet-scrim" role="dialog" aria-modal="true" aria-labelledby="sheet-title">
+  <div class="sheet" id="sheet">
+    <h3 id="sheet-title">Title</h3>
+    <p id="sheet-body">Body</p>
+    <div class="row" id="sheet-actions"></div>
+  </div>
+</div>
+
+<!-- Toast -->
+<div class="toast hide" id="toast" role="status" aria-live="polite">
+  <span id="toast-text">Hello</span>
+  <span class="link hide" id="toast-action">Undo</span>
+</div>
+
+<script>
+/* ============================================================
+   PhotoSwipe — mobile-first swipe-to-clean gallery
+   Single-file app. Vanilla JS. No build step.
+   ============================================================ */
+
+// ---------- Small helpers ----------
+const $ = (sel, root=document) => root.querySelector(sel);
+const $$ = (sel, root=document) => Array.from(root.querySelectorAll(sel));
+const html = (s, ...v) => { const t = document.createElement('template'); t.innerHTML = String.raw({raw:s}, ...v).trim(); return t.content.firstElementChild; };
+const clamp = (n,lo,hi)=>Math.max(lo,Math.min(hi,n));
+const rid = () => Math.random().toString(36).slice(2,10);
+
+const STORE_KEY = 'photoswipe.v1';
+
+// ---------- Config for OAuth (optional) ----------
+// Populate `window.PHOTOSWIPE_CONFIG = { google:{clientId}, microsoft:{clientId} }`
+// before this script runs to enable real cloud OAuth. Otherwise the
+// Connect flows show setup instructions.
+const CFG = Object.assign({
+  google: { clientId: '' },
+  microsoft: { clientId: '' },
+}, window.PHOTOSWIPE_CONFIG || {});
+
+// ---------- State ----------
+const state = {
+  view: 'home',
+  source: null,        // 'local' | 'google' | 'onedrive' | 'icloud' | 'demo'
+  items: [],           // { id, url, thumb?, name, source, remoteId? }
+  index: 0,            // current position in items
+  keptIds: new Set(),
+  trashItems: [],      // full item objects, in order marked
+  history: [],         // {action:'trash'|'keep', item, prevIndex} for undo
+};
+
+function persist() {
+  try {
+    const trashSerialisable = state.trashItems.map(({id,url,thumb,name,source,remoteId}) => ({id,url,thumb,name,source,remoteId}));
+    localStorage.setItem(STORE_KEY, JSON.stringify({
+      keptIds: [...state.keptIds],
+      trashItems: trashSerialisable,
+    }));
+  } catch(e) { /* ignore */ }
+}
+function restore() {
+  try {
+    const raw = localStorage.getItem(STORE_KEY);
+    if (!raw) return;
+    const data = JSON.parse(raw);
+    state.keptIds = new Set(data.keptIds || []);
+    // Blob URLs from a previous session are dead; drop local-source trash.
+    state.trashItems = (data.trashItems||[]).filter(i => i.source !== 'local');
+  } catch(e) { /* ignore */ }
+}
+
+// ---------- Views ----------
+function showView(name) {
+  state.view = name;
+  $$('.view').forEach(v => v.classList.toggle('active', v.id === 'view-' + name));
+  if (name === 'trash') renderTrash();
+}
+
+// ---------- Toast ----------
+let toastTimer = null;
+function toast(text, opts={}) {
+  const el = $('#toast'), body = $('#toast-text'), act = $('#toast-action');
+  body.textContent = text;
+  if (opts.action) {
+    act.textContent = opts.action;
+    act.classList.remove('hide');
+    act.onclick = () => { hideToast(); opts.onAction && opts.onAction(); };
+  } else act.classList.add('hide');
+  el.classList.remove('hide');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(hideToast, opts.duration || 3200);
+}
+function hideToast(){ $('#toast').classList.add('hide'); }
+
+// ---------- Sheet ----------
+function openSheet({title, body, actions}) {
+  $('#sheet-title').textContent = title;
+  $('#sheet-body').innerHTML = body;
+  const bar = $('#sheet-actions'); bar.innerHTML = '';
+  (actions || [{label:'Close', kind:'ghost', close:true}]).forEach(a => {
+    const b = document.createElement('button');
+    b.className = 'btn' + (a.kind ? ' ' + a.kind : '');
+    b.textContent = a.label;
+    b.onclick = () => { if (a.onClick) a.onClick(); if (a.close !== false) closeSheet(); };
+    bar.appendChild(b);
+  });
+  const scrim = $('#sheet-scrim'); scrim.classList.add('open');
+  scrim.onclick = (e) => { if (e.target === scrim) closeSheet(); };
+}
+function closeSheet(){ $('#sheet-scrim').classList.remove('open'); }
+
+// ---------- Source: LOCAL ----------
+function connectLocal() {
+  const inp = $('#file-input');
+  inp.value = '';
+  inp.onchange = () => {
+    const files = Array.from(inp.files || []).filter(f => f.type.startsWith('image/'));
+    if (!files.length) { toast('No images selected'); return; }
+    const items = files.map(f => ({
+      id: 'l_' + rid(),
+      url: URL.createObjectURL(f),
+      name: f.name,
+      source: 'local',
+    }));
+    startDeck('local', 'Local Library', items);
+  };
+  inp.click();
+}
+
+// ---------- Source: DEMO ----------
+function connectDemo() {
+  // Picsum returns a deterministic-looking image per seed; wide variety.
+  const n = 30;
+  const items = Array.from({length:n}, (_,i) => {
+    const seed = 'ps-' + (100 + i);
+    return {
+      id: 'd_' + seed,
+      url:  `https://picsum.photos/seed/${seed}/900/1400`,
+      thumb:`https://picsum.photos/seed/${seed}/240/240`,
+      name: `Sample ${i+1}.jpg`,
+      source: 'demo',
+    };
+  });
+  startDeck('demo', 'Demo Gallery', items);
+}
+
+// ---------- Source: GOOGLE PHOTOS ----------
+function connectGoogle() {
+  if (!CFG.google.clientId) {
+    openSheet({
+      title: 'Connect Google Photos',
+      body: `<p>The Google Photos Library API needs an OAuth Client ID from your Google Cloud project (Web application type).</p>
+        <ol>
+          <li>Create an OAuth 2.0 Client ID at <span class="kb">console.cloud.google.com</span>.</li>
+          <li>Enable the <b>Photos Library API</b>.</li>
+          <li>Add this app's URL to <b>Authorized JavaScript origins</b>.</li>
+          <li>Set <span class="kb">window.PHOTOSWIPE_CONFIG.google.clientId</span> in a small script before this app loads.</li>
+        </ol>
+        <p><b>Note:</b> Google's API does not allow deleting photos it didn't upload, so trashed items become an export list.</p>`,
+      actions: [
+        {label:'Open docs', kind:'', onClick: () => window.open('https://developers.google.com/photos/library/guides/get-started','_blank','noopener')},
+        {label:'Close', kind:'ghost'},
+      ],
+    });
+    return;
+  }
+  // Real flow (implicit token) — best-effort minimal implementation.
+  const scope = 'https://www.googleapis.com/auth/photoslibrary.readonly';
+  const redirect = location.origin + location.pathname;
+  const url = 'https://accounts.google.com/o/oauth2/v2/auth' +
+    '?client_id=' + encodeURIComponent(CFG.google.clientId) +
+    '&response_type=token' +
+    '&scope=' + encodeURIComponent(scope) +
+    '&redirect_uri=' + encodeURIComponent(redirect) +
+    '&include_granted_scopes=true';
+  sessionStorage.setItem('ps_pending', 'google');
+  location.href = url;
+}
+async function loadGooglePhotos(token) {
+  const items = [];
+  let pageToken = null;
+  do {
+    const r = await fetch('https://photoslibrary.googleapis.com/v1/mediaItems' + (pageToken ? '?pageToken='+pageToken : ''), {
+      headers: { Authorization: 'Bearer ' + token }
+    });
+    if (!r.ok) throw new Error('Google API error ' + r.status);
+    const d = await r.json();
+    (d.mediaItems||[]).forEach(m => {
+      if (!m.mimeType || !m.mimeType.startsWith('image/')) return;
+      items.push({
+        id: 'g_' + m.id, remoteId: m.id, source: 'google', name: m.filename || 'photo.jpg',
+        url:  m.baseUrl + '=w1200-h1800',
+        thumb: m.baseUrl + '=w240-h240-c',
+      });
+    });
+    pageToken = d.nextPageToken;
+  } while (pageToken && items.length < 200);
+  startDeck('google', 'Google Photos', items);
+}
+
+// ---------- Source: ONEDRIVE ----------
+function connectOneDrive() {
+  if (!CFG.microsoft.clientId) {
+    openSheet({
+      title: 'Connect OneDrive',
+      body: `<p>OneDrive uses Microsoft Graph and supports real deletion of your files.</p>
+        <ol>
+          <li>Register an app at <span class="kb">portal.azure.com</span> (Azure AD → App registrations).</li>
+          <li>Add a Single-page application redirect URI pointing here.</li>
+          <li>Grant delegated permissions <span class="kb">Files.ReadWrite</span>.</li>
+          <li>Set <span class="kb">window.PHOTOSWIPE_CONFIG.microsoft.clientId</span>.</li>
+        </ol>`,
+      actions: [
+        {label:'Open docs', onClick: () => window.open('https://learn.microsoft.com/graph/auth-v2-user','_blank','noopener')},
+        {label:'Close', kind:'ghost'},
+      ],
+    });
+    return;
+  }
+  const scope = 'files.readwrite offline_access';
+  const redirect = location.origin + location.pathname;
+  const url = 'https://login.microsoftonline.com/common/oauth2/v2.0/authorize' +
+    '?client_id=' + encodeURIComponent(CFG.microsoft.clientId) +
+    '&response_type=token' +
+    '&scope=' + encodeURIComponent(scope) +
+    '&redirect_uri=' + encodeURIComponent(redirect);
+  sessionStorage.setItem('ps_pending', 'microsoft');
+  location.href = url;
+}
+async function loadOneDrivePhotos(token) {
+  // List images from the Pictures folder.
+  const r = await fetch("https://graph.microsoft.com/v1.0/me/drive/root/search(q='.jpg')?$top=200&$select=id,name,file,image,@microsoft.graph.downloadUrl,thumbnails&$expand=thumbnails", {
+    headers: { Authorization: 'Bearer ' + token }
+  });
+  if (!r.ok) throw new Error('OneDrive API error ' + r.status);
+  const d = await r.json();
+  const items = (d.value||[]).filter(i => i.file && (i.image || /\.(jpe?g|png|heic|webp)$/i.test(i.name))).map(i => ({
+    id: 'o_' + i.id, remoteId: i.id, source: 'onedrive', name: i.name,
+    url: i['@microsoft.graph.downloadUrl'],
+    thumb: (i.thumbnails && i.thumbnails[0] && i.thumbnails[0].medium && i.thumbnails[0].medium.url) || i['@microsoft.graph.downloadUrl'],
+  }));
+  window.__ps_msToken = token;
+  startDeck('onedrive', 'OneDrive', items);
+}
+
+// ---------- Source: iCLOUD ----------
+function connectIcloud() {
+  openSheet({
+    title: 'Connect iCloud Photos',
+    body: `<p>Apple doesn't publish a web API for iCloud Photos — no third-party app can list your library directly.</p>
+      <p>What works today:</p>
+      <ol>
+        <li>Open the Photos app on iPhone → pick photos → <b>Share</b> → <b>iCloud Link</b> or create a <b>Shared Album</b> and copy its public link.</li>
+        <li>Paste the Shared Album RSS URL below to load its photos here.</li>
+        <li>Or use <b>Local Library</b> — on iPhone, "Select Photos" in Safari's permission prompt covers this cleanly.</li>
+      </ol>
+      <p><label style="display:block;margin-bottom:6px;color:var(--text)">Shared Album RSS URL</label>
+        <input id="icloud-url" type="url" placeholder="https://www.icloud.com/sharedalbum/…" style="width:100%;padding:12px;border-radius:12px;border:1px solid var(--border);background:var(--surface-2);color:var(--text)"/></p>`,
+    actions: [
+      {label:'Load album', onClick: () => {
+        const v = ($('#icloud-url').value || '').trim();
+        if (!v) { toast('Paste a Shared Album URL first'); return; }
+        loadIcloudShared(v);
+      }, close:false},
+      {label:'Close', kind:'ghost'},
+    ],
+  });
+}
+async function loadIcloudShared(url) {
+  // iCloud Shared Album web streams are token-based JSON, which requires CORS.
+  // We fall back to opening the album for the user to save and pick locally.
+  toast('iCloud web streams block cross-origin fetch. Opening the album so you can save the photos and pick them locally.', {duration:5200});
+  setTimeout(() => window.open(url, '_blank', 'noopener'), 400);
+  closeSheet();
+}
+
+// ---------- Deck management ----------
+function startDeck(source, title, items) {
+  if (!items.length) { toast('No photos found in this source'); return; }
+  state.source = source;
+  state.items = items;
+  state.index = 0;
+  state.history = [];
+  $('#deck-title').textContent = title;
+  showView('deck');
+  renderDeck();
+  updateProgress();
+}
+
+function updateProgress() {
+  $('#progress').textContent = `${state.index} / ${state.items.length}`;
+}
+
+function currentItem() { return state.items[state.index]; }
+
+function renderDeck() {
+  const deck = $('#deck');
+  deck.innerHTML = '';
+  const empty = $('#empty');
+  if (state.index >= state.items.length) {
+    empty.classList.remove('hide');
+    $('#empty-desc').textContent = state.trashItems.length
+      ? `You've reviewed every photo. ${state.trashItems.length} item${state.trashItems.length===1?'':'s'} in Trash.`
+      : `You've reviewed every photo. Nothing marked for deletion.`;
+    return;
+  }
+  empty.classList.add('hide');
+  // Render 3 cards: current + next 2
+  const stack = state.items.slice(state.index, state.index + 3).reverse(); // back to front
+  stack.forEach((item, idx) => {
+    const isTop = idx === stack.length - 1;
+    const depth = stack.length - 1 - idx; // 0 top, 1 next, 2 back
+    const scale = 1 - depth * 0.04;
+    const yoff = depth * 10;
+    const card = html`
+      <div class="card" data-id="${item.id}" style="transform:translateY(${yoff}px) scale(${scale}); z-index:${100 - depth};">
+        <img loading="eager" decoding="async" />
+        <div class="stamp trash">Trash</div>
+        <div class="stamp keep">Keep</div>
+        <div class="card-meta">
+          <span class="name"></span>
+          <span class="src"></span>
+        </div>
+      </div>`;
+    const img = card.querySelector('img');
+    img.src = item.url;
+    img.alt = item.name || 'Photo';
+    card.querySelector('.card-meta .name').textContent = item.name || 'Photo';
+    card.querySelector('.card-meta .src').textContent = sourceLabel(item.source);
+    card.querySelector('img').addEventListener('error', () => {
+      card.style.background = 'linear-gradient(135deg,#334155,#0f172a)';
+      const img = card.querySelector('img'); img.remove();
+      const err = document.createElement('div');
+      err.style.cssText = 'color:#e2e8f0;padding:20px;text-align:center;font-size:13px';
+      err.textContent = 'Could not load image';
+      card.appendChild(err);
+    });
+    deck.appendChild(card);
+    if (isTop) attachGesture(card);
+  });
+}
+
+function sourceLabel(s) {
+  return {local:'Local', demo:'Demo', google:'Google', onedrive:'OneDrive', icloud:'iCloud'}[s] || s || '';
+}
+
+// ---------- Gesture handling (pointer events) ----------
+function attachGesture(card) {
+  let startX=0, startY=0, dx=0, dy=0, dragging=false, w=0;
+  const stampL = card.querySelector('.stamp.trash');
+  const stampR = card.querySelector('.stamp.keep');
+
+  const onDown = (e) => {
+    if (e.button != null && e.button !== 0) return;
+    dragging = true;
+    w = card.getBoundingClientRect().width || 300;
+    startX = e.clientX; startY = e.clientY; dx = 0; dy = 0;
+    card.classList.remove('snap-back');
+    card.setPointerCapture && card.setPointerCapture(e.pointerId);
+  };
+  const onMove = (e) => {
+    if (!dragging) return;
+    dx = e.clientX - startX; dy = e.clientY - startY;
+    const rot = clamp(dx / 12, -22, 22);
+    card.style.transform = `translate(${dx}px, ${dy}px) rotate(${rot}deg)`;
+    const t = clamp(dx / (w*0.45), -1, 1);
+    stampR.style.opacity = t > 0 ? Math.min(1, t) : 0;
+    stampL.style.opacity = t < 0 ? Math.min(1, -t) : 0;
+  };
+  const onUp = (e) => {
+    if (!dragging) return;
+    dragging = false;
+    const threshold = Math.max(80, w * 0.28);
+    if (dx <= -threshold) commitSwipe('trash');
+    else if (dx >= threshold) commitSwipe('keep');
+    else {
+      // snap back
+      card.classList.add('snap-back');
+      card.style.transform = '';
+      stampL.style.opacity = 0; stampR.style.opacity = 0;
+      setTimeout(() => card.classList.remove('snap-back'), 300);
+    }
+  };
+  card.addEventListener('pointerdown', onDown);
+  card.addEventListener('pointermove', onMove);
+  card.addEventListener('pointerup', onUp);
+  card.addEventListener('pointercancel', onUp);
+  card.addEventListener('lostpointercapture', onUp);
+}
+
+function commitSwipe(action) {
+  const item = currentItem();
+  if (!item) return;
+  const top = $('#deck .card:last-child');
+  if (top) top.classList.add(action === 'trash' ? 'throw-left' : 'throw-right');
+
+  state.history.push({ action, item, prevIndex: state.index });
+  if (action === 'trash') {
+    // avoid duplicates
+    if (!state.trashItems.find(t => t.id === item.id)) state.trashItems.push(item);
+  } else {
+    state.keptIds.add(item.id);
+  }
+  state.index++;
+  persist();
+  updateProgress();
+
+  const doNext = () => { renderDeck(); };
+  // Wait for animation before re-rendering to avoid a visual jump.
+  setTimeout(doNext, 240);
+}
+
+function undoLast() {
+  const h = state.history.pop();
+  if (!h) { toast('Nothing to undo'); return; }
+  if (h.action === 'trash') {
+    state.trashItems = state.trashItems.filter(t => t.id !== h.item.id);
+  } else {
+    state.keptIds.delete(h.item.id);
+  }
+  state.index = h.prevIndex;
+  persist();
+  updateProgress();
+  renderDeck();
+  toast(`Undid ${h.action === 'trash' ? 'trash' : 'keep'}`);
+}
+
+// ---------- Trash view ----------
+function renderTrash() {
+  const grid = $('#trash-grid');
+  const items = state.trashItems;
+  $('#trash-count').textContent = `${items.length} item${items.length===1?'':'s'}`;
+  $('#btn-delete').disabled = items.length === 0;
+  grid.innerHTML = '';
+  if (!items.length) {
+    const empty = document.createElement('div');
+    empty.style.cssText = 'grid-column:1/-1;text-align:center;color:var(--muted);padding:40px 0;font-size:13px';
+    empty.textContent = 'Trash is empty. Swipe left on the deck to add photos here.';
+    grid.appendChild(empty);
+    return;
+  }
+  items.forEach(item => {
+    const tile = html`
+      <div class="trash-tile" data-id="${item.id}">
+        <img loading="lazy" />
+        <span class="src"></span>
+        <button class="restore" aria-label="Restore">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 3-6.7"/><path d="M3 4v6h6"/></svg>
+        </button>
+      </div>`;
+    const tImg = tile.querySelector('img');
+    tImg.src = item.thumb || item.url;
+    tImg.alt = item.name || 'Photo';
+    tile.querySelector('.src').textContent = sourceLabel(item.source);
+    tile.querySelector('.restore').onclick = () => restoreItem(item.id);
+    grid.appendChild(tile);
+  });
+}
+
+function restoreItem(id) {
+  const idx = state.trashItems.findIndex(t => t.id === id);
+  if (idx === -1) return;
+  state.trashItems.splice(idx, 1);
+  persist();
+  renderTrash();
+  toast('Restored');
+}
+function restoreAll() {
+  if (!state.trashItems.length) return;
+  const n = state.trashItems.length;
+  state.trashItems = [];
+  persist();
+  renderTrash();
+  toast(`Restored ${n} item${n===1?'':'s'}`);
+}
+
+async function deleteForever() {
+  const items = state.trashItems.slice();
+  if (!items.length) return;
+  openSheet({
+    title: `Delete ${items.length} photo${items.length===1?'':'s'}?`,
+    body: `<p>What "delete" means depends on the source:</p>
+      <ul style="color:var(--muted);font-size:13px;line-height:1.55;padding-left:20px;margin:0 0 10px">
+        <li><b>OneDrive:</b> permanently removed via Microsoft Graph.</li>
+        <li><b>Local / Google / iCloud / Demo:</b> exported as a list you can act on in the source app (web APIs can't reach into your library).</li>
+      </ul>`,
+    actions: [
+      {label:'Cancel', kind:'ghost'},
+      {label:'Delete', kind:'primary', onClick: performDeletion},
+    ],
+  });
+}
+
+async function performDeletion() {
+  const groups = {};
+  state.trashItems.forEach(i => (groups[i.source] = groups[i.source] || []).push(i));
+  let deletedCount = 0, remaining = [];
+
+  // Actual deletion for OneDrive if we have a token
+  if (groups.onedrive && window.__ps_msToken) {
+    for (const it of groups.onedrive) {
+      try {
+        const r = await fetch(`https://graph.microsoft.com/v1.0/me/drive/items/${it.remoteId}`, {
+          method: 'DELETE',
+          headers: { Authorization: 'Bearer ' + window.__ps_msToken }
+        });
+        if (r.ok || r.status === 204) deletedCount++;
+        else remaining.push(it);
+      } catch(e) { remaining.push(it); }
+    }
+  } else if (groups.onedrive) {
+    remaining.push(...groups.onedrive);
+  }
+
+  // Export the rest as a downloadable text file
+  const exportable = [].concat(groups.local||[], groups.google||[], groups.icloud||[], groups.demo||[], remaining);
+  if (exportable.length) {
+    const lines = ['# PhotoSwipe — items to delete', `# generated ${new Date().toISOString()}`, ''];
+    exportable.forEach(i => lines.push(`${i.source}\t${i.name}\t${i.remoteId || i.id}`));
+    downloadText('photoswipe-trash.txt', lines.join('\n'));
+  }
+
+  state.trashItems = [];
+  persist();
+  renderTrash();
+  toast(deletedCount
+    ? `Deleted ${deletedCount} from OneDrive · exported ${exportable.length} to file`
+    : `Exported ${exportable.length} to file`);
+}
+
+function exportList() {
+  if (!state.trashItems.length) { toast('Trash is empty'); return; }
+  const lines = ['# PhotoSwipe — items to delete', `# generated ${new Date().toISOString()}`, ''];
+  state.trashItems.forEach(i => lines.push(`${i.source}\t${i.name}\t${i.remoteId || i.id}`));
+  downloadText('photoswipe-trash.txt', lines.join('\n'));
+  toast('Exported photoswipe-trash.txt');
+}
+
+function downloadText(name, text) {
+  const blob = new Blob([text], {type:'text/plain'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = name; document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+
+// ---------- OAuth return handler ----------
+function handleOAuthReturn() {
+  if (!location.hash || location.hash.length < 4) return;
+  const params = new URLSearchParams(location.hash.slice(1));
+  const token = params.get('access_token');
+  if (!token) return;
+  const pending = sessionStorage.getItem('ps_pending');
+  sessionStorage.removeItem('ps_pending');
+  history.replaceState(null, '', location.pathname + location.search);
+  if (pending === 'google') {
+    loadGooglePhotos(token).catch(e => toast('Google: ' + e.message));
+  } else if (pending === 'microsoft') {
+    loadOneDrivePhotos(token).catch(e => toast('OneDrive: ' + e.message));
+  }
+}
+
+// ---------- Wire up ----------
+function init() {
+  restore();
+
+  $$('#sources .source').forEach(el => {
+    el.addEventListener('click', () => {
+      const s = el.dataset.source;
+      if (s === 'local') connectLocal();
+      else if (s === 'demo') connectDemo();
+      else if (s === 'google') connectGoogle();
+      else if (s === 'onedrive') connectOneDrive();
+      else if (s === 'icloud') connectIcloud();
+    });
+  });
+
+  $('#btn-info').addEventListener('click', () => openSheet({
+    title:'About PhotoSwipe',
+    body:`<p>A mobile-first web app that turns cleaning your camera roll into a swipe game.</p>
+      <p><b>Gestures:</b> drag a card left to trash, right to keep. Tap the buttons if you prefer. Undo brings the last card back.</p>
+      <p>Install to your home screen for a full-screen app feel.</p>`,
+    actions:[{label:'Got it', close:true}],
+  }));
+
+  $('#btn-back').addEventListener('click', () => showView('home'));
+  $('#btn-trash-back').addEventListener('click', () => showView('deck'));
+  $('#btn-trash-open').addEventListener('click', () => showView('trash'));
+  $('#btn-review').addEventListener('click', () => showView('trash'));
+
+  $('#btn-trash').addEventListener('click', () => currentItem() && commitSwipe('trash'));
+  $('#btn-keep').addEventListener('click',  () => currentItem() && commitSwipe('keep'));
+  $('#btn-undo').addEventListener('click',  undoLast);
+
+  $('#btn-restore-all').addEventListener('click', restoreAll);
+  $('#btn-export').addEventListener('click', exportList);
+  $('#btn-delete').addEventListener('click', deleteForever);
+
+  // Keyboard shortcuts for desktop testing
+  document.addEventListener('keydown', (e) => {
+    if (state.view !== 'deck') return;
+    if (e.key === 'ArrowLeft') { commitSwipe('trash'); }
+    else if (e.key === 'ArrowRight') { commitSwipe('keep'); }
+    else if (e.key === 'z' && (e.ctrlKey || e.metaKey)) { e.preventDefault(); undoLast(); }
+  });
+
+  handleOAuthReturn();
+}
+
+document.addEventListener('DOMContentLoaded', init);
+</script>
+</body>
+</html>
