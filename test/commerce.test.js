@@ -1,12 +1,18 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { checkoutForm, validateCart, verifyStripeSignature } from '../src/commerce.js';
+import { checkoutForm, stripeMode, validateCart, verifyStripeSignature } from '../src/commerce.js';
 
 test('cart accepts only known Stripe price IDs and bounded quantities', () => {
   const catalog = [{ price_id: 'price_abc' }];
   assert.deepEqual(validateCart([{ price_id: 'price_abc', quantity: 2 }], catalog), [{ price_id: 'price_abc', quantity: 2 }]);
   assert.throws(() => validateCart([{ price_id: 'price_other', quantity: 1 }], catalog));
   assert.throws(() => validateCart([{ price_id: 'price_abc', quantity: 0 }], catalog));
+  assert.throws(() => validateCart([{ price_id: 'price_abc', quantity: 10 }, { price_id: 'price_abc', quantity: 10 }], catalog));
+});
+
+test('restricted Stripe keys retain their test or live mode', () => {
+  assert.equal(stripeMode('rk_test_example'), 'test');
+  assert.equal(stripeMode('rk_live_example'), 'live');
 });
 
 test('checkout creates Stripe-hosted payment URLs and shipping fields', () => {

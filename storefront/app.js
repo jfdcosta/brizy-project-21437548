@@ -159,7 +159,7 @@ async function home() {
   grid.replaceChildren();
   if (!products.length) { grid.textContent = 'The collection is coming soon.'; return; }
   const note = $('#mode-note');
-  note.textContent = result.mode === 'mock' ? 'Prototype catalog: checkout becomes available when Stripe products and a payment key are connected.' : result.mode === 'test' ? 'Stripe test mode: use test cards only. No real charges will be made.' : '';
+  note.textContent = result.mode === 'mock' ? 'Prototype catalog: checkout becomes available when Stripe test products and a payment key are connected.' : result.mode === 'test' ? 'Stripe test mode: use test cards only. No real charges will be made.' : 'Live checkout is disabled while fulfillment and store policies are unfinished.';
   let selected = 0;
   $('#featured-total').textContent = String(products.length).padStart(2, '0');
   const heroViewer = createViewer($('#product-canvas'), products[0], true);
@@ -235,9 +235,10 @@ async function cartPage() {
       list.append(row);
     }
     $('#subtotal').textContent = money(subtotal, result.products[0]?.currency || 'gbp');
-    $('#checkout-button').disabled = !items.length || result.mode === 'mock';
+    $('#checkout-button').disabled = !items.length || !result.checkout_enabled;
     if (result.mode === 'mock') message.textContent = 'Checkout is awaiting a connected Stripe account.';
     else if (result.mode === 'test') message.textContent = 'Test mode: no real charges will be made.';
+    else message.textContent = 'Live checkout is disabled while fulfillment and store policies are unfinished.';
   };
   const change = (slug, difference) => {
     const items = cart();

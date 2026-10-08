@@ -1,0 +1,15 @@
+<!doctype html>
+<html lang="en">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Custom STL preview — Form Lab</title><meta name="description" content="Preview an STL model locally and check its dimensions before requesting a manufacturing quote."><link rel="stylesheet" href="/style.css"><script type="module" src="/quote.js"></script></head>
+<body data-page="quote">
+  <header class="site-header"><a class="brand" href="/" aria-label="Form Lab home">FORM<span>LAB</span><i></i></a><nav aria-label="Primary navigation"><a href="/index.html#collection">Collection</a><a href="/quote.html" aria-current="page">Custom quote</a><a href="/index.html#approach">Our approach</a></nav><a class="cart-link" href="/cart.html">Bag <span data-cart-count>0</span></a></header>
+  <main class="inner-page quote-page"><div class="eyebrow">CUSTOM PARTS / PREVIEW</div><h1>See your <em>idea.</em></h1><p class="quote-lead">Open an STL to inspect its form and size. This preview runs in your browser; the file is not uploaded or submitted as an order.</p>
+    <div class="quote-layout"><div>
+      <div class="stl-drop-zone" id="stl-drop-zone"><span class="drop-icon" aria-hidden="true">✳</span><h2>Open your STL</h2><p>Drop a file here or choose one from your device.</p><label class="button button-dark" for="stl-file">Choose STL file <span aria-hidden="true">→</span></label><input id="stl-file" type="file" accept=".stl,model/stl" aria-label="Choose STL file"></div>
+      <p id="stl-status" role="status" aria-live="polite">STL files are unitless. This preview interprets coordinates as millimetres and checks a 250 × 250 × 250 mm envelope.</p>
+      <div class="quote-options"><label for="stl-material">Material to discuss</label><select id="stl-material"><option>Recycled PLA</option><option>Recycled PETG</option><option>Carbon-filled PLA</option></select><label for="stl-colour">Preview colour</label><select id="stl-colour"><option value="#6d8a53">Eco green</option><option value="#2c342f">Matte black</option><option value="#d6d6c9">Natural</option></select></div>
+    </div><div><div class="stl-stage" id="stl-stage"><canvas id="stl-canvas" aria-label="Interactive preview of uploaded STL"></canvas><span class="stl-placeholder">Your model will appear here</span></div><div class="stl-results"><div><span>File</span><strong id="stl-name">—</strong></div><div><span>Envelope</span><strong id="stl-dimensions">—</strong></div><div><span>Enclosed mesh volume</span><strong id="stl-volume">—</strong></div><div><span>Triangles</span><strong id="stl-triangles">—</strong></div></div><p class="quote-disclaimer">Preview values assume a closed mesh and millimetre units. Printability, infill, supports, material use, delivery, and final price require a production review. Quote requests are not enabled in this prototype.</p></div></div>
+  </main>
+  <footer><a class="brand" href="/">FORM<span>LAB</span><i></i></a><p>Useful things, thoughtfully imagined.</p><small>© 2026 Form Lab. Prototype storefront.</small></footer>
+</body>
+</html>

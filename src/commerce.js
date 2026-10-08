@@ -1,10 +1,17 @@
 export const STOREFRONT_ID = 'eco-storefront';
 
+export function stripeMode(key) {
+  if (/^(sk|rk)_live_/.test(key || '')) return 'live';
+  if (/^(sk|rk)_test_/.test(key || '')) return 'test';
+  return 'unknown';
+}
+
 export function validateCart(items, catalog) {
   if (!Array.isArray(items) || items.length < 1 || items.length > 20) {
     throw new Error('Cart must contain 1 to 20 products.');
   }
   const prices = new Map(catalog.filter((product) => product.price_id).map((product) => [product.price_id, product]));
+  const seen = new Set();
   return items.map((item) => {
     const quantity = Number(item.quantity);
     if (!Number.isInteger(quantity) || quantity < 1 || quantity > 10) {
@@ -13,6 +20,10 @@ export function validateCart(items, catalog) {
     if (!prices.has(item.price_id)) {
       throw new Error('A product in your cart is no longer available.');
     }
+    if (seen.has(item.price_id)) {
+      throw new Error('Combine duplicate products into one cart line.');
+    }
+    seen.add(item.price_id);
     return { price_id: item.price_id, quantity };
   });
 }

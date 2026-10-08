@@ -1,5 +1,5 @@
 import mockProducts from '../catalog/products.json' with { type: 'json' };
-import { STOREFRONT_ID, checkoutForm, validateCart, verifyStripeSignature } from './commerce.js';
+import { STOREFRONT_ID, checkoutForm, stripeMode, validateCart, verifyStripeSignature } from './commerce.js';
 
 const json = (data, status = 200, headers = {}) => new Response(JSON.stringify(data), {
   status,
@@ -37,6 +37,7 @@ async function catalog(env) {
   if (!env.STRIPE_SECRET_KEY) {
     return {
       mode: 'mock',
+      checkout_enabled: false,
       products: mockProducts.map((product) => ({ ...product, id: `mock_${product.slug}`, price_id: null })),
     };
   }
@@ -51,7 +52,8 @@ async function catalog(env) {
     }
   }
   return {
-    mode: env.STRIPE_SECRET_KEY.startsWith('sk_live_') ? 'live' : 'test',
+    mode: stripeMode(env.STRIPE_SECRET_KEY),
+    checkout_enabled: stripeMode(env.STRIPE_SECRET_KEY) === 'test',
     products: products.filter((product) => product.metadata?.storefront === STOREFRONT_ID)
       .map((product) => {
         const price = pricesById.get(product.default_price) || activePrices.get(product.id);
@@ -74,12 +76,7 @@ async function catalog(env) {
 
 async function checkout(request, env) {
   if (!env.STRIPE_SECRET_KEY) return json({ error: 'Checkout is not connected to Stripe yet.' }, 503);
-  if (env.STRIPE_SECRET_KEY.startsWith('sk_live_') && !env.SHIPPING_RATE_ID) {
-    return json({ error: 'Live checkout needs a configured shipping rate.' }, 503);
-  }
-  if (env.STRIPE_SECRET_KEY.startsWith('sk_live_') && !['automatic', 'none'].includes(env.TAX_MODE)) {
-    return json({ error: 'Live checkout needs an explicit tax mode.' }, 503);
-  }
+  if (stripeMode(env.STRIPE_SECRET_KEY) !== 'test') return json({ error: 'Live checkout is disabled while fulfillment and store policies are unfinished.' }, 503);
   let payload;
   try { payload = await request.json(); } catch { return json({ error: 'Invalid cart.' }, 400); }
   let items;
@@ -131,7 +128,11 @@ export default {
       if (url.pathname === '/api/order' && request.method === 'GET') return await order(request, env);
       if (url.pathname === '/api/webhook' && request.method === 'POST') return await webhook(request, env);
       if (url.pathname.startsWith('/api/')) return json({ error: 'Not found.' }, 404);
-      return env.ASSETS.fetch(request);
+      const asset = await env.ASSETS.fetch(request);
+      if (env.STOREFRONT_PREVIEW !== '1') return asset;
+      const headers = new Headers(asset.headers);
+      headers.set('x-robots-tag', 'noindex, nofollow, noarchive');
+      return new Response(asset.body, { status: asset.status, statusText: asset.statusText, headers });
     } catch (error) {
       console.error(error);
       return json({ error: 'The store could not complete this request.' }, 500);

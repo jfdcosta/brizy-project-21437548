@@ -39,3 +39,18 @@ test('Stripe catalog feeds checkout and rejects unlisted prices', async () => {
     globalThis.fetch = originalFetch;
   }
 });
+
+test('live Stripe keys cannot create a Checkout Session in this prototype', async () => {
+  const originalFetch = globalThis.fetch;
+  globalThis.fetch = async () => { throw new Error('Stripe should not be contacted'); };
+  try {
+    for (const key of ['sk_live_example', 'rk_live_example']) {
+      const response = await worker.fetch(new Request('https://store.example/api/checkout', {
+        method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ items: [{ price_id: 'price_1', quantity: 1 }] }),
+      }), { STRIPE_SECRET_KEY: key });
+      assert.equal(response.status, 503);
+    }
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
+});

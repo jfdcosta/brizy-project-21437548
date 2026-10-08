@@ -10,6 +10,7 @@ export default defineConfig({
       input: {
         main: resolve('storefront/index.html'),
         cart: resolve('storefront/cart.html'),
+        quote: resolve('storefront/quote.html'),
         success: resolve('storefront/success.html'),
       },
     },

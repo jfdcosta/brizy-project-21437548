@@ -1,6 +1,6 @@
 # Form Lab storefront prototype
 
-The new Cloudflare Worker storefront is in `storefront/` and `src/`. The original Brizy export remains at the repository root. The current catalog contains three clearly labelled prototype products. The 3D views are original procedural models and do not use assets from a third-party site.
+The new Cloudflare Worker storefront is in `storefront/` and `src/`. The original Brizy export remains at the repository root. The current catalog contains three clearly labelled prototype products. The 3D product views are original procedural models and do not use assets from a third-party site. `/quote.html` offers a browser-only STL preview with geometry measurements, but quote requests and pricing are not enabled.
 
 ## Local development
 
@@ -17,16 +17,20 @@ Open the local app at port 8787. `npm test` checks cart validation, Stripe form 
 
 ## Stripe catalog and payments
 
-Stripe Products and Prices are the source of truth when `STRIPE_SECRET_KEY` is configured on the Worker. The cart sends Stripe Price IDs, and the Worker verifies those IDs against the active catalog before creating a Stripe-hosted Checkout Session. Payment card details never pass through this app. The return page checks the Checkout Session's payment status with Stripe. Stripe stores customer and order records; the signed webhook endpoint is `/api/webhook`.
+Stripe Products and Prices are the source of truth when `STRIPE_SECRET_KEY` is configured on the Worker. The cart sends Stripe Price IDs, and the Worker verifies those IDs against the active catalog before creating a Stripe-hosted Checkout Session. Payment card details never pass through this app. The return page checks the Checkout Session's payment status with Stripe. Stripe stores Checkout Sessions and Customer objects; the app has no durable order or fulfillment record yet. The signed webhook endpoint is `/api/webhook`.
 
 To seed the prototype catalog into **Stripe test mode**, provide a test secret key securely and run `npm run seed:stripe`. The script is idempotent by product slug and storefront metadata. It refuses a live key unless `ALLOW_LIVE_SEED=1` is explicitly set. Review names, descriptions, prices, images, stock, and policies before any live seeding.
 
+The connected **JDC VENTURES LTD sandbox** already has the three prototype products and GBP prices as of 8 October 2026. The local Worker does not inherit connector access: it still needs its own Stripe test key. A restricted key is preferable where its permissions cover product and price reads plus Checkout Session creation and retrieval.
+
 For a deployed Worker, configure `STRIPE_SECRET_KEY` and `STRIPE_WEBHOOK_SECRET` as encrypted Worker secrets, not in this repository. Register `https://<your-domain>/api/webhook` in Stripe for `checkout.session.completed`. Stripe receipts must be enabled in the Stripe dashboard. The current webhook verifies signatures and logs completed Checkout Session IDs; fulfillment automation has not been connected.
 
-Live checkout requires `SHIPPING_RATE_ID` and `TAX_MODE` (`automatic` or `none`) as Worker variables. `SHIPPING_COUNTRIES` defaults to `GB`. Set a valid Stripe Shipping Rate and choose the tax mode according to the business's actual shipping and tax policies. Test keys permit a prototype checkout without these live settings.
+Test keys permit prototype checkout. Live checkout is blocked in code until durable order recording and fulfillment are implemented and the store policies are approved. Future live setup will also require `SHIPPING_RATE_ID` and an explicit `TAX_MODE` (`automatic` or `none`) chosen for the business's actual tax obligations. `SHIPPING_COUNTRIES` defaults to `GB`.
 
 ## Cloudflare deployment
 
-With Cloudflare account access, install dependencies, build, and run `npx wrangler deploy`. Connect a domain in Cloudflare and set the Worker secrets and variables there. Deploying source without Stripe secrets leaves the site in mock catalog mode with checkout disabled. A live launch also needs legal pages, returns/refund and delivery policies, product inventory, and a fulfillment process.
+The isolated public preview is at https://eco-storefront-preview.jfdcosta-jdc.workers.dev/ and uses `wrangler.preview.jsonc`. Run `npm run deploy:preview` to update it. That config routes all preview requests through the Worker so responses carry `X-Robots-Tag: noindex, nofollow, noarchive`. The preview has no Stripe key, no production domain route, and disabled checkout. Its deployed home, quote page, API catalog, and browser cart flow were checked on 8 October 2026.
 
-The requested reference is `ecolayerlabs.com`. Its visible catalog, 3D implementation, checkout, and network calls still need an audit. The current cloud runtime blocks that domain until the saved network draft is reviewed, saved, and published. The prototype is an original implementation and should not be described as a reproduction of the reference site yet.
+For a later production deployment, install dependencies, build, and run `npx wrangler deploy` only after completing the launch requirements. Connect a domain in Cloudflare and set the Worker secrets and variables there. Deploying source without Stripe secrets leaves the site in mock catalog mode with checkout disabled. A live launch also needs legal pages, returns/refund and delivery policies, product inventory, and a fulfillment process.
+
+The requested reference is `ecolayerlabs.com`. It was inspected from the local environment on 8 October 2026; see `LIVE_AUDIT_2026-10-08.md` and `PROJECT_AUDIT_2026-10-08.md`. The prototype is an original implementation and is not a reproduction of the reference site yet.
