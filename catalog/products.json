@@ -1,0 +1,29 @@
+[
+  {
+    "slug": "eco-strap",
+    "name": "Eco Strap",
+    "description": "A flexible, reusable strap for everyday carry. Prototype listing and price.",
+    "unit_amount": 1800,
+    "currency": "gbp",
+    "model": "strap",
+    "accent": "#6d8a53"
+  },
+  {
+    "slug": "modular-bottle",
+    "name": "Modular Bottle",
+    "description": "A refillable bottle concept for a lighter everyday routine. Prototype listing and price.",
+    "unit_amount": 2800,
+    "currency": "gbp",
+    "model": "bottle",
+    "accent": "#d89a65"
+  },
+  {
+    "slug": "desk-set",
+    "name": "Desk Set",
+    "description": "A compact organizer set for a clear working space. Prototype listing and price.",
+    "unit_amount": 4200,
+    "currency": "gbp",
+    "model": "desk",
+    "accent": "#6b8e98"
+  }
+]
