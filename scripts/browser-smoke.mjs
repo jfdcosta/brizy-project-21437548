@@ -28,17 +28,26 @@ try {
   const page = await browser.newPage({ viewport: { width: 1440, height: 900 } });
   await page.goto(base, { waitUntil: 'domcontentloaded' });
   await page.locator('.product-card').first().waitFor({ timeout: 15000 });
-  assert.equal(await page.locator('.product-card').count(), 3);
+  assert.equal(await page.locator('.product-card').count(), 4);
   assert.equal(await page.locator('#product-canvas').count(), 1);
+  const duo = page.locator('.product-card').filter({ hasText: 'JDC Duo' });
+  assert.equal(await duo.locator('img').count(), 1);
+  assert.equal(await duo.getByRole('button', { name: 'Add to bag +' }).count(), 0);
+  await duo.getByRole('link', { name: 'View the prototype' }).click();
+  await page.getByRole('heading', { name: 'Two watches. One place.' }).waitFor();
+  assert.equal(await page.getByText('Prototype — not available to order').count(), 1);
+  await page.screenshot({ path: join(tmpdir(), 'eco-storefront-jdc-duo.png'), fullPage: true });
+  await page.goto(base, { waitUntil: 'domcontentloaded' });
+  await page.locator('.product-card').first().waitFor({ timeout: 15000 });
   await page.screenshot({ path: join(tmpdir(), 'eco-storefront-home.png'), fullPage: true });
-  await page.locator('.product-card').first().getByRole('button', { name: 'Add to bag +' }).click();
+  await page.locator('.product-card').filter({ hasText: 'Eco Strap' }).getByRole('button', { name: 'Add to bag +' }).click();
   assert.equal(await page.locator('[data-cart-count]').textContent(), '1');
   await page.goto(`${base}/cart.html`, { waitUntil: 'domcontentloaded' });
   await page.locator('.cart-row').waitFor({ timeout: 15000 });
   assert.equal(await page.locator('.cart-row').count(), 1);
   assert.equal(await page.locator('#checkout-button').isDisabled(), true);
   await page.screenshot({ path: join(tmpdir(), 'eco-storefront.png'), fullPage: true });
-  console.log('Browser smoke passed: catalog, 3D canvas, add to bag, cart, mock checkout guard.');
+  console.log('Browser smoke passed: JDC Duo prototype, 3D catalog, add to bag, cart, mock checkout guard.');
 } finally {
   await browser.close();
 }

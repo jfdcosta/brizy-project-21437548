@@ -1,5 +1,14 @@
 [
   {
+    "slug": "jdc-duo",
+    "name": "JDC Duo",
+    "description": "A printed pair of SKÅDIS watch docks for original Pixel Watch 3 and Galaxy Watch4 chargers. Working personal prototype; not available to order.",
+    "availability": "prototype",
+    "detail_url": "/jdc-duo.html",
+    "image": "/images/jdc-duo-mounted.jpg",
+    "accent": "#252a22"
+  },
+  {
     "slug": "eco-strap",
     "name": "Eco Strap",
     "description": "A flexible, reusable strap for everyday carry. Prototype listing and price.",

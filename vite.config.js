@@ -11,6 +11,7 @@ export default defineConfig({
         main: resolve('storefront/index.html'),
         cart: resolve('storefront/cart.html'),
         quote: resolve('storefront/quote.html'),
+        jdcDuo: resolve('storefront/jdc-duo.html'),
         success: resolve('storefront/success.html'),
       },
     },

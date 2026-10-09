@@ -34,6 +34,8 @@ async function stripeList(env, resource) {
 }
 
 async function catalog(env) {
+  const prototypeProducts = mockProducts.filter((product) => product.availability === 'prototype')
+    .map((product) => ({ ...product, id: `prototype_${product.slug}`, price_id: null }));
   if (!env.STRIPE_SECRET_KEY) {
     return {
       mode: 'mock',
@@ -54,7 +56,7 @@ async function catalog(env) {
   return {
     mode: stripeMode(env.STRIPE_SECRET_KEY),
     checkout_enabled: stripeMode(env.STRIPE_SECRET_KEY) === 'test',
-    products: products.filter((product) => product.metadata?.storefront === STOREFRONT_ID)
+    products: [...prototypeProducts, ...products.filter((product) => product.metadata?.storefront === STOREFRONT_ID && !prototypeProducts.some((preview) => preview.slug === product.metadata?.slug))
       .map((product) => {
         const price = pricesById.get(product.default_price) || activePrices.get(product.id);
         if (!price) return null;
@@ -70,7 +72,7 @@ async function catalog(env) {
           accent: product.metadata.accent || '#6d8a53',
           image: product.images?.[0] || null,
         };
-      }).filter(Boolean),
+      }).filter(Boolean)],
   };
 }
 

@@ -142,6 +142,7 @@ async function getCatalog() {
 }
 
 function addToCart(product) {
+  if (product.availability === 'prototype' || !Number.isInteger(product.unit_amount)) return;
   const items = cart();
   const existing = items.find((item) => item.slug === product.slug);
   if (existing) existing.quantity = Math.min(existing.quantity + 1, 10);
@@ -160,42 +161,70 @@ async function home() {
   if (!products.length) { grid.textContent = 'The collection is coming soon.'; return; }
   const note = $('#mode-note');
   note.textContent = result.mode === 'mock' ? 'Prototype catalog: checkout becomes available when Stripe test products and a payment key are connected.' : result.mode === 'test' ? 'Stripe test mode: use test cards only. No real charges will be made.' : 'Live checkout is disabled while fulfillment and store policies are unfinished.';
+  const viewerProducts = products.filter((product) => product.availability !== 'prototype');
   let selected = 0;
-  $('#featured-total').textContent = String(products.length).padStart(2, '0');
-  const heroViewer = createViewer($('#product-canvas'), products[0], true);
+  $('#featured-total').textContent = String(viewerProducts.length).padStart(2, '0');
+  let heroViewer;
+  if (viewerProducts.length) heroViewer = createViewer($('#product-canvas'), viewerProducts[0], true);
+  else {
+    const photo = element('img', 'hero-photo');
+    photo.src = products[0].image;
+    photo.alt = `Photograph of ${products[0].name}`;
+    $('#product-canvas').replaceWith(photo);
+    $('.stage-label').textContent = 'WORKING PROTOTYPE';
+    $('.stage-controls').hidden = true;
+  }
   const select = (index) => {
-    selected = (index + products.length) % products.length;
-    heroViewer.setProduct(products[selected]);
+    selected = (index + viewerProducts.length) % viewerProducts.length;
+    heroViewer.setProduct(viewerProducts[selected]);
     $('#featured-number').textContent = String(selected + 1).padStart(2, '0');
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
-  $('#prev-model').addEventListener('click', () => select(selected - 1));
-  $('#next-model').addEventListener('click', () => select(selected + 1));
+  if (viewerProducts.length) {
+    $('#prev-model').addEventListener('click', () => select(selected - 1));
+    $('#next-model').addEventListener('click', () => select(selected + 1));
+  }
   products.forEach((product, index) => {
+    const isPrototype = product.availability === 'prototype';
     const card = element('article', 'product-card');
     const art = element('div', 'product-art');
-    art.style.backgroundColor = `${product.accent}22`;
-    art.append(element('span', 'product-number', `0${index + 1} / 3D VIEW`));
-    const canvas = element('canvas');
-    canvas.setAttribute('aria-label', `3D preview of ${product.name}`);
-    art.append(canvas);
+    art.style.backgroundColor = product.accent ? `${product.accent}22` : '#dfe6d7';
+    art.append(element('span', 'product-number', `${String(index + 1).padStart(2, '0')} / ${isPrototype ? 'REAL PROTOTYPE' : '3D VIEW'}`));
+    let canvas;
+    if (isPrototype && product.image) {
+      const photo = element('img', 'product-photo');
+      photo.src = product.image;
+      photo.alt = `Printed ${product.name} watch docks mounted on a pegboard`;
+      photo.loading = 'lazy';
+      art.append(photo);
+    } else {
+      canvas = element('canvas');
+      canvas.setAttribute('aria-label', `3D preview of ${product.name}`);
+      art.append(canvas);
+    }
     card.append(art);
     const info = element('div', 'product-info');
     const copy = element('div');
     copy.append(element('h3', '', product.name), element('p', '', product.description));
-    info.append(copy, element('strong', '', money(product.unit_amount, product.currency)));
+    info.append(copy, element('strong', '', isPrototype ? 'Not for sale' : money(product.unit_amount, product.currency)));
     card.append(info);
     const actions = element('div', 'product-actions');
-    const view = element('button', '', 'Explore in 3D →');
-    view.type = 'button';
-    view.addEventListener('click', () => select(index));
-    const add = element('button', '', 'Add to bag +');
-    add.type = 'button';
-    add.addEventListener('click', () => addToCart(product));
-    actions.append(view, add);
+    if (isPrototype) {
+      const detail = element('a', 'product-detail-link', 'View the prototype →');
+      detail.href = product.detail_url;
+      actions.append(detail);
+    } else {
+      const view = element('button', '', 'Explore in 3D →');
+      view.type = 'button';
+      view.addEventListener('click', () => select(viewerProducts.findIndex((item) => item.slug === product.slug)));
+      const add = element('button', '', 'Add to bag +');
+      add.type = 'button';
+      add.addEventListener('click', () => addToCart(product));
+      actions.append(view, add);
+    }
     card.append(actions);
     grid.append(card);
-    createViewer(canvas, product, false);
+    if (canvas) createViewer(canvas, product, false);
   });
 }
 
@@ -207,7 +236,10 @@ async function cartPage() {
   catch (error) { list.textContent = error.message; return; }
   const bySlug = new Map(result.products.map((product) => [product.slug, product]));
   const render = () => {
-    const items = cart().filter((item) => bySlug.has(item.slug));
+    const items = cart().filter((item) => {
+      const product = bySlug.get(item.slug);
+      return product && product.availability !== 'prototype' && Number.isInteger(product.unit_amount);
+    });
     saveCart(items);
     list.replaceChildren();
     if (!items.length) list.append(element('p', 'empty-cart', 'Your bag is empty. Find something to explore in the collection.'));
