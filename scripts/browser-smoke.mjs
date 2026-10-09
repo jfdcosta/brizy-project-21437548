@@ -28,13 +28,16 @@ try {
   const page = await browser.newPage({ viewport: { width: 1440, height: 900 } });
   await page.goto(base, { waitUntil: 'domcontentloaded' });
   await page.locator('.product-card').first().waitFor({ timeout: 15000 });
+  await page.locator('#product-canvas[data-model-source="actual"][data-model-status="ready"]').waitFor({ timeout: 15000 });
   assert.equal(await page.locator('.product-card').count(), 4);
   assert.equal(await page.locator('#product-canvas').count(), 1);
+  assert.equal(await page.getByRole('link', { name: 'Eco Layer Labs home' }).count(), 1);
   const duo = page.locator('.product-card').filter({ hasText: 'JDC Duo' });
-  assert.equal(await duo.locator('img').count(), 1);
+  await duo.locator('canvas[data-model-source="actual"][data-model-status="ready"]').waitFor({ timeout: 15000 });
   assert.equal(await duo.getByRole('button', { name: 'Add to bag +' }).count(), 0);
-  await duo.getByRole('link', { name: 'View the prototype' }).click();
+  await duo.getByRole('link', { name: 'Details' }).click();
   await page.getByRole('heading', { name: 'Two watches. One place.' }).waitFor();
+  await page.locator('#duo-canvas[data-model-source="actual"][data-model-status="ready"]').waitFor({ timeout: 15000 });
   assert.equal(await page.getByText('Prototype — not available to order').count(), 1);
   await page.screenshot({ path: join(tmpdir(), 'eco-storefront-jdc-duo.png'), fullPage: true });
   await page.goto(base, { waitUntil: 'domcontentloaded' });

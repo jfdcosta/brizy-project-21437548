@@ -2,10 +2,11 @@
   {
     "slug": "jdc-duo",
     "name": "JDC Duo",
-    "description": "A printed pair of SKÅDIS watch docks for original Pixel Watch 3 and Galaxy Watch4 chargers. Working personal prototype; not available to order.",
+    "description": "A 3D printed SKÅDIS pair for Pixel Watch 3 and Galaxy Watch4 chargers. Working prototype.",
     "availability": "prototype",
     "detail_url": "/jdc-duo.html",
     "image": "/images/jdc-duo-mounted.jpg",
+    "model3d": "/models/jdc-duo.glb",
     "accent": "#252a22"
   },
   {

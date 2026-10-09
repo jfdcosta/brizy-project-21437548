@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import '@fontsource/dm-sans/400.css';
 import '@fontsource/dm-sans/700.css';
 import '@fontsource/space-grotesk/400.css';
@@ -73,10 +74,37 @@ function makeModel(product) {
   return group;
 }
 
-function createViewer(canvas, product, interactive = false) {
+const modelCache = new Map();
+async function loadDisplayModel(product) {
+  if (!modelCache.has(product.model3d)) modelCache.set(product.model3d, new GLTFLoader().loadAsync(product.model3d));
+  const gltf = await modelCache.get(product.model3d);
+  const actualParts = gltf.scene.clone(true);
+  actualParts.traverse((part) => {
+    if (part.isMesh) { part.castShadow = true; part.receiveShadow = true; }
+  });
+  const bounds = new THREE.Box3().setFromObject(actualParts);
+  const center = bounds.getCenter(new THREE.Vector3());
+  const size = bounds.getSize(new THREE.Vector3());
+  actualParts.position.sub(center);
+  const wrapper = new THREE.Group();
+  wrapper.add(actualParts);
+  wrapper.scale.setScalar(3.3 / Math.max(size.x, size.y, size.z));
+  wrapper.rotation.y = Math.PI + 0.35;
+  return wrapper;
+}
+
+export function createViewer(canvas, product, interactive = false) {
   let renderer;
   try { renderer = new THREE.WebGLRenderer({ canvas, alpha: true, antialias: true }); }
-  catch { canvas.replaceWith(element('div', 'viewer-fallback', product.name)); return { setProduct() {} }; }
+  catch {
+    if (product.image) {
+      const photo = element('img', 'viewer-fallback-photo');
+      photo.src = product.image;
+      photo.alt = `Photograph of ${product.name}`;
+      canvas.replaceWith(photo);
+    } else canvas.replaceWith(element('div', 'viewer-fallback', product.name));
+    return { setProduct() {} };
+  }
   renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
   renderer.shadowMap.enabled = true;
   renderer.outputColorSpace = THREE.SRGBColorSpace;
@@ -92,8 +120,37 @@ function createViewer(canvas, product, interactive = false) {
   const rim = new THREE.DirectionalLight('#c9e4dc', 2.0);
   rim.position.set(-4, 2, -4);
   scene.add(rim);
-  let model = makeModel(product);
+  let model = new THREE.Group();
   scene.add(model);
+  let loadVersion = 0;
+  const setProduct = (next) => {
+    const version = ++loadVersion;
+    canvas.parentElement.querySelector('.viewer-fallback-photo')?.remove();
+    canvas.setAttribute('aria-busy', next.model3d ? 'true' : 'false');
+    canvas.dataset.modelStatus = next.model3d ? 'loading' : 'ready';
+    const apply = (nextModel) => {
+      if (version !== loadVersion) return;
+      scene.remove(model);
+      model = nextModel;
+      scene.add(model);
+      canvas.dataset.modelStatus = 'ready';
+      canvas.dataset.modelSource = next.model3d ? 'actual' : 'concept';
+      canvas.setAttribute('aria-busy', 'false');
+    };
+    if (!next.model3d) { apply(makeModel(next)); return; }
+    loadDisplayModel(next).then(apply).catch((error) => {
+      if (version !== loadVersion) return;
+      console.error('3D model could not load', error);
+      canvas.dataset.modelStatus = 'error';
+      canvas.setAttribute('aria-busy', 'false');
+      if (next.image) {
+        const photo = element('img', 'viewer-fallback-photo');
+        photo.src = next.image;
+        photo.alt = `Photograph of ${next.name}`;
+        canvas.parentElement.append(photo);
+      }
+    });
+  };
   let dragging = false, lastX = 0, lastY = 0;
   if (interactive) {
     canvas.addEventListener('pointerdown', (event) => { dragging = true; lastX = event.clientX; lastY = event.clientY; canvas.setPointerCapture(event.pointerId); });
@@ -126,13 +183,8 @@ function createViewer(canvas, product, interactive = false) {
     requestAnimationFrame(animate);
   };
   requestAnimationFrame(animate);
-  return {
-    setProduct(next) {
-      scene.remove(model);
-      model = makeModel(next);
-      scene.add(model);
-    },
-  };
+  setProduct(product);
+  return { setProduct };
 }
 
 async function getCatalog() {
@@ -161,7 +213,7 @@ async function home() {
   if (!products.length) { grid.textContent = 'The collection is coming soon.'; return; }
   const note = $('#mode-note');
   note.textContent = result.mode === 'mock' ? 'Prototype catalog: checkout becomes available when Stripe test products and a payment key are connected.' : result.mode === 'test' ? 'Stripe test mode: use test cards only. No real charges will be made.' : 'Live checkout is disabled while fulfillment and store policies are unfinished.';
-  const viewerProducts = products.filter((product) => product.availability !== 'prototype');
+  const viewerProducts = products.filter((product) => product.model3d || product.availability !== 'prototype');
   let selected = 0;
   $('#featured-total').textContent = String(viewerProducts.length).padStart(2, '0');
   let heroViewer;
@@ -189,9 +241,9 @@ async function home() {
     const card = element('article', 'product-card');
     const art = element('div', 'product-art');
     art.style.backgroundColor = product.accent ? `${product.accent}22` : '#dfe6d7';
-    art.append(element('span', 'product-number', `${String(index + 1).padStart(2, '0')} / ${isPrototype ? 'REAL PROTOTYPE' : '3D VIEW'}`));
+    art.append(element('span', 'product-number', `${String(index + 1).padStart(2, '0')} / ${product.model3d ? 'ACTUAL 3D' : isPrototype ? 'REAL PROTOTYPE' : '3D VIEW'}`));
     let canvas;
-    if (isPrototype && product.image) {
+    if (isPrototype && !product.model3d && product.image) {
       const photo = element('img', 'product-photo');
       photo.src = product.image;
       photo.alt = `Printed ${product.name} watch docks mounted on a pegboard`;
@@ -210,7 +262,13 @@ async function home() {
     card.append(info);
     const actions = element('div', 'product-actions');
     if (isPrototype) {
-      const detail = element('a', 'product-detail-link', 'View the prototype →');
+      if (product.model3d) {
+        const view = element('button', '', 'Explore in 3D →');
+        view.type = 'button';
+        view.addEventListener('click', () => select(viewerProducts.findIndex((item) => item.slug === product.slug)));
+        actions.append(view);
+      }
+      const detail = element('a', 'product-detail-link', 'Details →');
       detail.href = product.detail_url;
       actions.append(detail);
     } else {
