@@ -47,7 +47,7 @@ try {
   }
   await page.evaluate(() => scrollTo({ top: 0, behavior: 'instant' }));
   await page.screenshot({ path: join(tmpdir(), 'eco-storefront-home.png'), fullPage: true });
-  await duo.getByRole('link', { name: 'View JDC Duo details', exact: true }).click();
+  await duo.getByRole('link', { name: 'View JDC Duo', exact: true }).click();
   await page.getByRole('heading', { name: 'JDC Duo', exact: true }).waitFor();
   await page.waitForLoadState('networkidle');
   assert.equal(await page.locator('#gallery-stage').getAttribute('data-active-media'), 'photo');
@@ -80,7 +80,7 @@ try {
   assert.ok(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), 'Homepage must fit mobile width');
   await page.screenshot({ path: join(tmpdir(), 'eco-storefront-home-mobile.png'), fullPage: true });
   if (catalog.products.some((item) => item.slug === 'eco-strap')) {
-    await page.locator('.product-card').filter({ hasText: 'Eco Strap' }).getByRole('link', { name: 'View Eco Strap details', exact: true }).click();
+    await page.locator('.product-card').filter({ hasText: 'Eco Strap' }).getByRole('link', { name: 'View Eco Strap', exact: true }).click();
     await page.getByRole('heading', { name: 'Eco Strap', exact: true }).waitFor();
     assert.equal(await page.locator('#gallery-image').getAttribute('src'), '/turntable/eco-strap/00.webp');
   }

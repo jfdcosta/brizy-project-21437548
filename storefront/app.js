@@ -100,11 +100,7 @@ async function home() {
       add.addEventListener('click', () => addToCart(product));
       actions.append(add);
     }
-    const detail = element('a', 'button button-outline', 'View product');
-    detail.href = productUrl(product);
-    detail.setAttribute('aria-label', `View ${product.name} details`);
-    actions.append(detail);
-    card.append(actions);
+    if (actions.childElementCount) card.append(actions);
     grid.append(card);
   }
 }
