@@ -93,10 +93,94 @@ async function loadDisplayModel(product) {
   return wrapper;
 }
 
+let webglAvailable = true;
+
+function createTurntable(canvas, product, interactive) {
+  const image = element('img', 'turntable-image');
+  image.draggable = false;
+  image.tabIndex = interactive ? 0 : -1;
+  canvas.replaceWith(image);
+  let current = product;
+  let frame = 0;
+  let zoom = 1;
+  let dragging = false;
+  let lastX = 0;
+  let controls;
+  const frameUrl = (item, index) => `${item.turntable.base}/${String(index).padStart(2, '0')}.webp`;
+  const showFrame = () => {
+    image.src = current.turntable ? frameUrl(current, frame) : current.image || '';
+    image.dataset.frame = String(frame);
+  };
+  const setProduct = (next) => {
+    current = next;
+    frame = 0;
+    image.alt = next.turntable ? `Interactive 360 degree view of ${next.name}` : `Photograph of ${next.name}`;
+    image.dataset.modelSource = next.turntable ? 'turntable' : 'photo';
+    image.dataset.modelStatus = 'ready';
+    showFrame();
+    if (controls) {
+      const [left, right] = controls.querySelectorAll('button');
+      left.setAttribute('aria-label', `Rotate ${next.name} left`);
+      right.setAttribute('aria-label', `Rotate ${next.name} right`);
+    }
+    if (next.turntable) {
+      for (let index = 1; index < next.turntable.frames; index++) {
+        const preload = new Image();
+        preload.src = frameUrl(next, index);
+      }
+    }
+  };
+  const advance = (steps) => {
+    if (!current.turntable) return;
+    frame = (frame + steps % current.turntable.frames + current.turntable.frames) % current.turntable.frames;
+    showFrame();
+  };
+  if (interactive) {
+    controls = element('div', 'turntable-controls');
+    const left = element('button', '', '←');
+    const right = element('button', '', '→');
+    left.type = right.type = 'button';
+    left.setAttribute('aria-label', `Rotate ${product.name} left`);
+    right.setAttribute('aria-label', `Rotate ${product.name} right`);
+    left.addEventListener('click', () => advance(-1));
+    right.addEventListener('click', () => advance(1));
+    controls.append(left, right);
+    image.parentElement.append(controls);
+    image.addEventListener('pointerdown', (event) => {
+      dragging = true;
+      lastX = event.clientX;
+      image.setPointerCapture(event.pointerId);
+    });
+    image.addEventListener('pointermove', (event) => {
+      if (!dragging) return;
+      const steps = Math.trunc((event.clientX - lastX) / 16);
+      if (!steps) return;
+      advance(steps);
+      lastX += steps * 16;
+    });
+    image.addEventListener('pointerup', () => { dragging = false; });
+    image.addEventListener('pointercancel', () => { dragging = false; });
+    image.addEventListener('keydown', (event) => {
+      if (event.key === 'ArrowLeft') { advance(-1); event.preventDefault(); }
+      if (event.key === 'ArrowRight') { advance(1); event.preventDefault(); }
+    });
+    image.addEventListener('wheel', (event) => {
+      event.preventDefault();
+      zoom = Math.max(1, Math.min(1.8, zoom - event.deltaY * .001));
+      image.style.transform = `scale(${zoom})`;
+    }, { passive: false });
+  }
+  setProduct(product);
+  return { setProduct };
+}
+
 export function createViewer(canvas, product, interactive = false) {
+  if (!webglAvailable && product.turntable) return createTurntable(canvas, product, interactive);
   let renderer;
   try { renderer = new THREE.WebGLRenderer({ canvas, alpha: true, antialias: true }); }
   catch {
+    webglAvailable = false;
+    if (product.turntable) return createTurntable(canvas, product, interactive);
     if (product.image) {
       const photo = element('img', 'viewer-fallback-photo');
       photo.src = product.image;
@@ -184,7 +268,11 @@ export function createViewer(canvas, product, interactive = false) {
   };
   requestAnimationFrame(animate);
   setProduct(product);
-  return { setProduct };
+  return {
+    setProduct,
+    setYaw(yaw) { model.rotation.y = yaw; },
+    capture() { renderer.render(scene, camera); return canvas.toDataURL('image/webp', .8); },
+  };
 }
 
 async function getCatalog() {
@@ -236,6 +324,7 @@ async function home() {
     $('#prev-model').addEventListener('click', () => select(selected - 1));
     $('#next-model').addEventListener('click', () => select(selected + 1));
   }
+  if (new URLSearchParams(location.search).has('capture')) window.__turntableCapture = { viewer: heroViewer, products: viewerProducts };
   products.forEach((product, index) => {
     const isPrototype = product.availability === 'prototype';
     const card = element('article', 'product-card');

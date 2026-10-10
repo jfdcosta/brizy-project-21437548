@@ -7,6 +7,7 @@
     "detail_url": "/jdc-duo.html",
     "image": "/images/jdc-duo-mounted.jpg",
     "model3d": "/models/jdc-duo.glb",
+    "turntable": { "base": "/turntable/jdc-duo", "frames": 24 },
     "accent": "#252a22"
   },
   {
@@ -16,6 +17,7 @@
     "unit_amount": 1800,
     "currency": "gbp",
     "model": "strap",
+    "turntable": { "base": "/turntable/eco-strap", "frames": 16 },
     "accent": "#6d8a53"
   },
   {
@@ -25,6 +27,7 @@
     "unit_amount": 2800,
     "currency": "gbp",
     "model": "bottle",
+    "turntable": { "base": "/turntable/modular-bottle", "frames": 16 },
     "accent": "#d89a65"
   },
   {
@@ -34,6 +37,7 @@
     "unit_amount": 4200,
     "currency": "gbp",
     "model": "desk",
+    "turntable": { "base": "/turntable/desk-set", "frames": 16 },
     "accent": "#6b8e98"
   }
 ]

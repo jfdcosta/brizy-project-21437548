@@ -60,6 +60,7 @@ async function catalog(env) {
       .map((product) => {
         const price = pricesById.get(product.default_price) || activePrices.get(product.id);
         if (!price) return null;
+        const localProduct = mockProducts.find((item) => item.slug === product.metadata.slug);
         return {
           id: product.id,
           price_id: price.id,
@@ -71,6 +72,7 @@ async function catalog(env) {
           model: product.metadata.model || 'generic',
           accent: product.metadata.accent || '#6d8a53',
           image: product.images?.[0] || null,
+          turntable: localProduct?.turntable || null,
         };
       }).filter(Boolean)],
   };

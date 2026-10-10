@@ -12,7 +12,7 @@ npm test
 npm run dev
 ```
 
-Open `http://127.0.0.1:8787/` in your browser. The site shows a non-purchasable JDC Duo prototype with an interactive 3D view of the actual dock parts, plus three concept products with procedural 3D previews. `/quote.html` also previews a local STL and measures its envelope and enclosed mesh volume; it does not upload the file or request a production quote. Add to bag works for the concept products; checkout stays disabled until a Stripe test key is connected.
+Open `http://127.0.0.1:8787/` in your browser. The site shows a non-purchasable JDC Duo prototype with an interactive 3D view of the actual dock parts, plus three concept products with procedural 3D previews. Chrome profiles with WebGL disabled get draggable 360-degree views of the same models. `/quote.html` also previews a local STL and measures its envelope and enclosed mesh volume; it does not upload the file or request a production quote. Add to bag works for the concept products; checkout stays disabled until a Stripe test key is connected.
 
 To run the browser smoke check, install Chrome or Chromium and run `npm run smoke` while the server is running. If the executable is not in a standard location, set `CHROME_BIN` to its path.
 

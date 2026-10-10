@@ -8,6 +8,8 @@
     "build": "vite build",
     "test": "node --test",
     "smoke": "node scripts/browser-smoke.mjs",
+    "smoke:fallback": "node scripts/fallback-smoke.mjs",
+    "render:turntables": "node scripts/render-turntables.mjs",
     "deploy": "npm run build && wrangler deploy",
     "deploy:preview": "npm run build && wrangler deploy --config wrangler.preview.jsonc",
     "seed:stripe": "node scripts/seed-stripe.mjs"
