@@ -93,6 +93,13 @@ async function home() {
     info.append(element('strong', 'product-price', availability));
     card.append(info);
     const actions = element('div', 'product-actions');
+    if (product.availability !== 'prototype' && Number.isInteger(product.unit_amount)) {
+      const add = element('button', 'button button-dark', 'Add to cart');
+      add.type = 'button';
+      add.setAttribute('aria-label', `Add ${product.name} to cart`);
+      add.addEventListener('click', () => addToCart(product));
+      actions.append(add);
+    }
     const detail = element('a', 'button button-outline', 'View product');
     detail.href = productUrl(product);
     detail.setAttribute('aria-label', `View ${product.name} details`);

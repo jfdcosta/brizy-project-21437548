@@ -67,8 +67,8 @@ em { font-style: normal; color: var(--green); }
 .product-info h3 a:hover { text-decoration: underline; }
 .product-info p { color: var(--muted); font-size: 18px; margin-bottom: 16px; }
 .product-price { font-size: 18px; }
-.product-actions { margin-top: auto; padding: 0 24px 24px; }
-.product-actions .button { width: 100%; }
+.product-actions { display: flex; flex-wrap: wrap; gap: 12px; margin-top: auto; padding: 0 24px 24px; }
+.product-actions .button { flex: 1 1 180px; }
 .mode-note { color: var(--muted); font-size: 15px; margin: 24px 0 0; }
 .approach { border-top: 1px solid var(--line); }
 .approach-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 64px; }
