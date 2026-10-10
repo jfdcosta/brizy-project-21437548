@@ -1,0 +1,14 @@
+{
+  "currency": "gbp",
+  "pla_per_kg": 10,
+  "petg_per_kg": 12,
+  "electricity_per_kwh": 0.26,
+  "printer_power_kw": 0.2,
+  "printer_wear_per_hour": 0.5,
+  "customer_printer_per_hour": 3.5,
+  "labour_per_hour": 15,
+  "packaging_per_job": 0.75,
+  "failure_reserve_per_job": 1,
+  "standard_uk_card_percent": 0.015,
+  "standard_uk_card_fixed": 0.2
+}

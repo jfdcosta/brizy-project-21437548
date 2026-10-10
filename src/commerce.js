@@ -30,10 +30,10 @@ export function validateCart(items, catalog) {
 
 export function checkoutForm(items, origin, shippingRateId, countries = ['GB'], taxMode = 'none') {
   const body = new URLSearchParams({
+    integration_identifier: `eco_storefront_${Array.from(crypto.getRandomValues(new Uint8Array(8)), (byte) => String.fromCharCode(97 + byte % 26)).join('')}`,
     mode: 'payment',
     success_url: `${origin}/success.html?session_id={CHECKOUT_SESSION_ID}`,
     cancel_url: `${origin}/cart.html`,
-    customer_creation: 'always',
     billing_address_collection: 'required',
     allow_promotion_codes: 'true',
     'metadata[storefront]': STOREFRONT_ID,

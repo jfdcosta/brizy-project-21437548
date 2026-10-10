@@ -41,13 +41,13 @@ async function list(resource) {
 
 const existing = await list('products');
 const prices = await list('prices');
-for (const product of products) {
+for (const product of products.filter((product) => product.availability !== 'prototype' && Number.isInteger(product.unit_amount))) {
   const form = new URLSearchParams({
     name: product.name,
     description: product.description,
     'metadata[storefront]': STOREFRONT_ID,
     'metadata[slug]': product.slug,
-    'metadata[model]': product.model,
+    'metadata[model]': product.model || 'generic',
     'metadata[accent]': product.accent,
   });
   const found = existing.find((item) => item.metadata?.storefront === STOREFRONT_ID && item.metadata?.slug === product.slug);

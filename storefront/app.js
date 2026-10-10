@@ -48,9 +48,12 @@ function addToCart(product) {
 }
 
 const productUrl = (product) => product.slug === 'jdc-duo' ? '/jdc-duo' : `/products/${encodeURIComponent(product.slug)}`;
-const catalogNote = (mode) => mode === 'test'
-  ? 'Preview store · Test purchases only. No real charges.'
-  : 'Preview store · Online ordering is coming soon.';
+const catalogNote = (catalog) => {
+  if (catalog.mode === 'test') return 'Test purchases only. No real charges.';
+  if (!catalog.checkout_enabled) return 'Online checkout is currently unavailable.';
+  const product = catalog.products.find((item) => item.slug === 'jdc-duo');
+  return [product?.delivery_note, product?.dispatch_note].filter(Boolean).join(' ');
+};
 
 async function home() {
   const grid = $('#product-grid');
@@ -59,7 +62,12 @@ async function home() {
   catch (error) { grid.textContent = error.message; return; }
   grid.replaceChildren();
   if (!result.products.length) { grid.textContent = 'Our products are coming soon.'; return; }
-  $('#mode-note').textContent = catalogNote(result.mode);
+  $('#mode-note').textContent = catalogNote(result);
+  grid.classList.toggle('single-product', result.products.length === 1);
+  const duo = result.products.find((product) => product.slug === 'jdc-duo');
+  if (duo?.availability !== 'prototype' && Number.isInteger(duo?.unit_amount)) {
+    $('.hero-note').textContent = `${money(duo.unit_amount, duo.currency)} · ${duo.delivery_note}`;
+  }
   for (const product of result.products) {
     const card = element('article', 'product-card');
     const art = element('a', 'product-art');
@@ -81,7 +89,7 @@ async function home() {
     link.href = productUrl(product);
     title.append(link);
     info.append(title, element('p', '', product.summary || product.description));
-    const availability = product.availability === 'prototype' ? 'Coming soon' : `${money(product.unit_amount, product.currency)} · Preview price`;
+    const availability = product.availability === 'prototype' ? 'Coming soon' : `${money(product.unit_amount, product.currency)}${result.mode === 'live' ? '' : ' · Preview price'}`;
     info.append(element('strong', 'product-price', availability));
     card.append(info);
     const actions = element('div', 'product-actions');
@@ -134,9 +142,7 @@ async function cartPage() {
     }
     $('#subtotal').textContent = money(subtotal, result.products[0]?.currency || 'gbp');
     $('#checkout-button').disabled = !items.length || !result.checkout_enabled;
-    if (result.mode === 'mock') message.textContent = 'Online ordering is coming soon.';
-    else if (result.mode === 'test') message.textContent = 'Test mode: no real charges will be made.';
-    else message.textContent = 'Live checkout is disabled while fulfillment and store policies are unfinished.';
+    message.textContent = catalogNote(result);
   };
   const change = (slug, difference) => {
     const items = cart();
@@ -146,6 +152,7 @@ async function cartPage() {
     render();
   };
   $('#checkout-button').addEventListener('click', async () => {
+    message.classList.remove('error');
     message.textContent = 'Opening secure checkout…';
     const button = $('#checkout-button');
     button.disabled = true;
@@ -155,7 +162,7 @@ async function cartPage() {
       const data = await response.json();
       if (!response.ok || !data.url) throw new Error(data.error || 'Checkout is unavailable.');
       window.location.assign(data.url);
-    } catch (error) { message.textContent = error.message; button.disabled = false; }
+    } catch (error) { message.textContent = error.message; message.classList.add('error'); button.disabled = false; }
   });
   render();
 }
@@ -169,9 +176,13 @@ async function successPage() {
     const order = await response.json();
     if (!response.ok) throw new Error(order.error || 'Could not retrieve the order.');
     if (order.payment_status === 'paid') {
-      status.textContent = 'Your payment was received. A Stripe receipt will be sent to your email address.';
+      status.textContent = order.mode === 'test'
+        ? 'Test payment received. No real charge was made.'
+        : 'Your payment was received. Thank you for your order.';
       saveCart([]);
-    } else status.textContent = 'Your checkout is complete. Payment is still processing; check your email for confirmation.';
+    } else status.textContent = order.status === 'complete'
+      ? 'Your payment is still processing. Your order will be recorded when payment is confirmed.'
+      : 'Payment has not been completed. Return to your cart to continue checkout.';
     const panel = $('#order-panel');
     panel.append(element('div', 'eyebrow', `ORDER ${order.id}`));
     for (const item of order.items) {

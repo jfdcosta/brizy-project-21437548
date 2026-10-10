@@ -3,7 +3,7 @@
     "slug": "jdc-duo",
     "name": "JDC Duo",
     "description": "A matching pair of watch charging docks that keeps your watches in one place and your desk clear.",
-    "availability": "prototype",
+    "availability": "available",
     "detail_url": "/jdc-duo",
     "image": "/images/jdc-duo-mounted.jpg",
     "model3d": "/models/jdc-duo.glb",
@@ -48,14 +48,22 @@
       },
       {
         "title": "What is included",
-        "text": "The design is a pair of docks with removable charger inserts. Watches, charging pucks, cables and the pegboard shown in the photos are not included."
+        "text": "A complete PLA pair: two dock bodies and two removable charger inserts. Watches, original charging pucks, cables and the pegboard shown in the photos are not included."
+      },
+      {
+        "title": "Delivery",
+        "text": "£1.99 UK delivery per order. Made to order. Dispatch within 2–3 working days; delivery transit time is additional."
       },
       {
         "title": "Current status",
         "text": "The PLA prototype has been printed and fitted to the creator’s board. The Pixel insert fitted, and the revised Galaxy insert held its charger in a physical fit check. Long term charging, heat, load and durability checks are still in progress."
       }
     ],
-    "independent_note": "Independent design. Not an IKEA, Google or Samsung product."
+    "independent_note": "Independent design. Not an IKEA, Google or Samsung product.",
+    "unit_amount": 1799,
+    "currency": "gbp",
+    "delivery_note": "£1.99 UK delivery per order.",
+    "dispatch_note": "Made to order. Dispatch within 2–3 working days; delivery transit time is additional."
   },
   {
     "slug": "eco-strap",

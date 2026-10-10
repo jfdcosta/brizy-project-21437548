@@ -33,8 +33,9 @@ try {
     assert.equal(requests.some((url) => /\/turntable\/jdc-duo\//.test(url)), false, 'Photo gallery must not preload turntable frames');
   };
   await page.goto(base, { waitUntil: 'networkidle' });
+  const catalog = await (await page.request.get(`${base}/api/catalog`)).json();
   await page.locator('.product-card').first().waitFor({ timeout: 15000 });
-  assert.equal(await page.locator('.product-card').count(), 4);
+  assert.equal(await page.locator('.product-card').count(), catalog.products.length);
   assert.equal(await page.locator('canvas').count(), 0);
   assert.equal(await page.getByText('Explore in 3D').count(), 0);
   const duo = page.locator('.product-card').filter({ hasText: 'JDC Duo' });
@@ -51,7 +52,13 @@ try {
   await page.waitForLoadState('networkidle');
   assert.equal(await page.locator('#gallery-stage').getAttribute('data-active-media'), 'photo');
   assert.equal(await page.locator('canvas').count(), 0);
-  assert.equal(await page.locator('#product-add').isVisible(), false);
+  const product = catalog.products.find((item) => item.slug === 'jdc-duo');
+  assert.equal(await page.locator('#product-add').isVisible(), product.availability !== 'prototype');
+  if (catalog.mode === 'live') {
+    assert.equal(await page.locator('#product-price').textContent(), '£17.99');
+    assert.ok((await page.locator('#product-availability').textContent()).includes('£1.99 UK delivery'));
+    assert.equal(await page.getByText('Coming soon', { exact: true }).count(), 0);
+  }
   noViewerRequests();
   await page.getByRole('button', { name: 'Show charger fit photo of JDC Duo' }).click();
   assert.equal(await page.locator('#gallery-image').getAttribute('src'), '/images/jdc-duo-chargers.png');
@@ -72,15 +79,21 @@ try {
   await page.goto(base, { waitUntil: 'networkidle' });
   assert.ok(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), 'Homepage must fit mobile width');
   await page.screenshot({ path: join(tmpdir(), 'eco-storefront-home-mobile.png'), fullPage: true });
-  await page.locator('.product-card').filter({ hasText: 'Eco Strap' }).getByRole('link', { name: 'View Eco Strap details', exact: true }).click();
-  await page.getByRole('heading', { name: 'Eco Strap', exact: true }).waitFor();
-  assert.equal(await page.locator('#gallery-image').getAttribute('src'), '/turntable/eco-strap/00.webp');
+  if (catalog.products.some((item) => item.slug === 'eco-strap')) {
+    await page.locator('.product-card').filter({ hasText: 'Eco Strap' }).getByRole('link', { name: 'View Eco Strap details', exact: true }).click();
+    await page.getByRole('heading', { name: 'Eco Strap', exact: true }).waitFor();
+    assert.equal(await page.locator('#gallery-image').getAttribute('src'), '/turntable/eco-strap/00.webp');
+  }
+  await page.goto(`${base}/jdc-duo`, { waitUntil: 'networkidle' });
   await page.getByRole('button', { name: 'Add to cart', exact: true }).click();
   assert.equal(await page.locator('[data-cart-count]').textContent(), '1');
   await page.getByRole('link', { name: 'View cart', exact: false }).click();
   await page.locator('.cart-row').waitFor({ timeout: 15000 });
   assert.equal(await page.locator('.cart-row').count(), 1);
-  assert.equal(await page.locator('#checkout-button').isDisabled(), true);
+  assert.equal(await page.locator('#subtotal').textContent(), '£17.99');
+  assert.equal(await page.locator('#checkout-button').isDisabled(), !catalog.checkout_enabled);
+  if (catalog.mode === 'live') assert.ok((await page.locator('#checkout-message').textContent()).includes('£1.99 UK delivery'));
+  await page.screenshot({ path: join(tmpdir(), 'eco-storefront-cart.png'), fullPage: true });
   console.log('Browser smoke passed: photo-only homepage, on-demand product gallery, mobile layout, product page cart, checkout guard.');
 } finally {
   await browser.close();

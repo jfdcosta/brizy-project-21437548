@@ -1,4 +1,5 @@
 import mockProducts from '../catalog/products.json' with { type: 'json' };
+import Stripe from 'stripe';
 import { STOREFRONT_ID, checkoutForm, stripeMode, validateCart, verifyStripeSignature } from './commerce.js';
 
 const json = (data, status = 200, headers = {}) => new Response(JSON.stringify(data), {
@@ -6,27 +7,30 @@ const json = (data, status = 200, headers = {}) => new Response(JSON.stringify(d
   headers: { 'content-type': 'application/json; charset=utf-8', 'cache-control': 'no-store', ...headers },
 });
 
-async function stripe(env, path, options = {}) {
-  const response = await fetch(`https://api.stripe.com/v1${path}`, {
-    ...options,
-    headers: {
-      authorization: `Bearer ${env.STRIPE_SECRET_KEY}`,
-      ...(options.body ? { 'content-type': 'application/x-www-form-urlencoded' } : {}),
-      ...options.headers,
-    },
+function stripeClient(env) {
+  return new Stripe(env.STRIPE_SECRET_KEY, {
+    httpClient: Stripe.createFetchHttpClient(),
+    maxNetworkRetries: 2,
   });
-  const data = await response.json();
-  if (!response.ok) throw new Error(data.error?.message || `Stripe returned ${response.status}.`);
-  return data;
+}
+
+function paymentReady(env) {
+  const mode = stripeMode(env.STRIPE_SECRET_KEY);
+  const expected = env.STRIPE_MODE || 'test';
+  return mode === expected && !!env.STRIPE_WEBHOOK_SECRET && !!env.ORDERS
+    && (mode === 'test' || (mode === 'live' && env.LIVE_CHECKOUT_ENABLED === '1' && !!env.SHIPPING_RATE_ID));
+}
+
+function allowedProducts(env) {
+  const slugs = env.STORE_PRODUCT_SLUGS?.split(',').map((slug) => slug.trim());
+  return slugs ? mockProducts.filter((product) => slugs.includes(product.slug)) : mockProducts;
 }
 
 async function stripeList(env, resource) {
   const all = [];
   let after;
   do {
-    const query = new URLSearchParams({ active: 'true', limit: '100' });
-    if (after) query.set('starting_after', after);
-    const page = await stripe(env, `/${resource}?${query}`);
+    const page = await stripeClient(env)[resource].list({ active: true, limit: 100, ...(after ? { starting_after: after } : {}) });
     all.push(...page.data);
     after = page.has_more ? page.data.at(-1)?.id : undefined;
   } while (after);
@@ -34,13 +38,14 @@ async function stripeList(env, resource) {
 }
 
 async function catalog(env) {
-  const prototypeProducts = mockProducts.filter((product) => product.availability === 'prototype')
+  const localProducts = allowedProducts(env);
+  const prototypeProducts = localProducts.filter((product) => product.availability === 'prototype')
     .map((product) => ({ ...product, id: `prototype_${product.slug}`, price_id: null }));
   if (!env.STRIPE_SECRET_KEY) {
     return {
       mode: 'mock',
       checkout_enabled: false,
-      products: mockProducts.map((product) => ({ ...product, id: `mock_${product.slug}`, price_id: null })),
+      products: localProducts.map((product) => ({ ...product, id: `mock_${product.slug}`, price_id: null })),
     };
   }
   const [products, prices] = await Promise.all([stripeList(env, 'products'), stripeList(env, 'prices')]);
@@ -48,19 +53,21 @@ async function catalog(env) {
   const pricesById = new Map();
   for (const price of prices) {
     pricesById.set(price.id, price);
-    if (price.type === 'one_time' && typeof price.product === 'string') {
+    if (price.type === 'one_time' && price.currency === 'gbp' && Number.isInteger(price.unit_amount) && price.unit_amount > 0 && typeof price.product === 'string') {
       const current = activePrices.get(price.product);
       if (!current || price.created > current.created) activePrices.set(price.product, price);
     }
   }
   return {
     mode: stripeMode(env.STRIPE_SECRET_KEY),
-    checkout_enabled: stripeMode(env.STRIPE_SECRET_KEY) === 'test',
-    products: [...prototypeProducts, ...products.filter((product) => product.metadata?.storefront === STOREFRONT_ID && !prototypeProducts.some((preview) => preview.slug === product.metadata?.slug))
+    checkout_enabled: paymentReady(env),
+    products: [...prototypeProducts, ...products.filter((product) => product.metadata?.storefront === STOREFRONT_ID && localProducts.some((item) => item.slug === product.metadata?.slug) && !prototypeProducts.some((preview) => preview.slug === product.metadata?.slug))
       .map((product) => {
-        const price = pricesById.get(product.default_price) || activePrices.get(product.id);
-        if (!price) return null;
         const localProduct = mockProducts.find((item) => item.slug === product.metadata.slug);
+        const defaultPrice = pricesById.get(product.default_price);
+        const price = defaultPrice?.product === product.id && defaultPrice?.type === 'one_time' && defaultPrice?.currency === 'gbp' && Number.isInteger(defaultPrice?.unit_amount) && defaultPrice.unit_amount > 0
+          ? defaultPrice : activePrices.get(product.id);
+        if (!price) return null;
         return {
           ...localProduct,
           id: product.id,
@@ -73,7 +80,9 @@ async function catalog(env) {
           model: product.metadata.model || 'generic',
           accent: product.metadata.accent || '#6d8a53',
           image: localProduct?.image || product.images?.[0] || null,
-          turntable: localProduct?.turntable || null,
+          model3d: localProduct?.model3d || null,
+          detail_url: localProduct?.detail_url || null,
+          availability: stripeMode(env.STRIPE_SECRET_KEY) === 'live' ? 'available' : localProduct?.availability,
         };
       }).filter(Boolean)],
   };
@@ -81,7 +90,7 @@ async function catalog(env) {
 
 async function checkout(request, env) {
   if (!env.STRIPE_SECRET_KEY) return json({ error: 'Checkout is not connected to Stripe yet.' }, 503);
-  if (stripeMode(env.STRIPE_SECRET_KEY) !== 'test') return json({ error: 'Live checkout is disabled while fulfillment and store policies are unfinished.' }, 503);
+  if (!paymentReady(env)) return json({ error: 'Checkout is waiting for its payment, shipping and order configuration.' }, 503);
   let payload;
   try { payload = await request.json(); } catch { return json({ error: 'Invalid cart.' }, 400); }
   let items;
@@ -90,7 +99,7 @@ async function checkout(request, env) {
   const origin = new URL(request.url).origin;
   const countries = (env.SHIPPING_COUNTRIES || 'GB').split(',').map((country) => country.trim().toUpperCase());
   const form = checkoutForm(items, origin, env.SHIPPING_RATE_ID, countries, env.TAX_MODE);
-  const session = await stripe(env, '/checkout/sessions', { method: 'POST', body: form });
+  const session = await stripeClient(env).checkout.sessions.create(Object.fromEntries(form));
   return json({ url: session.url, id: session.id });
 }
 
@@ -99,16 +108,20 @@ async function order(request, env) {
   if (!env.STRIPE_SECRET_KEY) return json({ error: 'Stripe is not connected.' }, 503);
   if (!id || !/^cs_(test_|live_)[A-Za-z0-9]+$/.test(id)) return json({ error: 'Invalid session ID.' }, 400);
   const [session, lines] = await Promise.all([
-    stripe(env, `/checkout/sessions/${id}`),
-    stripe(env, `/checkout/sessions/${id}/line_items?limit=100`),
+    stripeClient(env).checkout.sessions.retrieve(id),
+    stripeClient(env).checkout.sessions.listLineItems(id, { limit: 100 }),
   ]);
   if (session.metadata?.storefront !== STOREFRONT_ID) return json({ error: 'Order not found.' }, 404);
+  const recorded = env.ORDERS ? await env.ORDERS.getByName(id).summary() : null;
   return json({
     id: session.id,
+    mode: session.livemode ? 'live' : 'test',
     payment_status: session.payment_status,
     status: session.status,
     amount_total: session.amount_total,
     currency: session.currency,
+    order_recorded: !!recorded,
+    fulfillment_status: recorded?.fulfillment_status || null,
     items: lines.data.map((line) => ({ description: line.description, quantity: line.quantity, amount_total: line.amount_total })),
   });
 }
@@ -117,9 +130,28 @@ async function webhook(request, env) {
   const payload = await request.text();
   const valid = await verifyStripeSignature(payload, request.headers.get('stripe-signature'), env.STRIPE_WEBHOOK_SECRET);
   if (!valid) return json({ error: 'Invalid Stripe signature.' }, 400);
-  const event = JSON.parse(payload);
-  if (event.type === 'checkout.session.completed' && event.data.object.metadata?.storefront === STOREFRONT_ID) {
-    console.log('Checkout completed:', event.data.object.id);
+  let event;
+  try { event = JSON.parse(payload); } catch { return json({ error: 'Invalid webhook payload.' }, 400); }
+  const checkoutEvent = ['checkout.session.completed', 'checkout.session.async_payment_succeeded'].includes(event.type);
+  const session = event.data?.object;
+  if (checkoutEvent && session?.metadata?.storefront === STOREFRONT_ID && session.payment_status === 'paid') {
+    const live = (env.STRIPE_MODE || 'test') === 'live';
+    if (stripeMode(env.STRIPE_SECRET_KEY) !== (live ? 'live' : 'test') || event.livemode !== live || session.livemode !== live) {
+      return json({ error: 'Payment event does not match this store environment.' }, 400);
+    }
+    if (live && !paymentReady(env)) return json({ error: 'Live order configuration is incomplete.' }, 503);
+    if (!env.ORDERS) return json({ error: 'Order storage is not configured.' }, 503);
+    const lines = [];
+    for await (const line of stripeClient(env).checkout.sessions.listLineItems(session.id, { limit: 100 })) {
+      lines.push({ price_id: line.price?.id, description: line.description, quantity: line.quantity, amount_total: line.amount_total });
+    }
+    await env.ORDERS.getByName(session.id).recordPaid({
+      session_id: session.id, event_id: event.id, amount_total: session.amount_total,
+      currency: session.currency, payment_intent: session.payment_intent,
+      customer_details: session.customer_details,
+      shipping_details: session.collected_information?.shipping_details || session.shipping_details || null,
+      items: lines,
+    });
   }
   return json({ received: true });
 }

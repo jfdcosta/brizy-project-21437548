@@ -1,0 +1,16 @@
+{
+  "date": "2026-10-10",
+  "deployment": "27caa0c4-3343-450b-bcc3-d167d88fc88a",
+  "url": "https://eco-storefront-preview.jfdcosta-jdc.workers.dev",
+  "mode": "live",
+  "currency": "gbp",
+  "item_amount": 1799,
+  "shipping_amount": 199,
+  "total": 1998,
+  "payment_status": "unpaid",
+  "order_recorded": false,
+  "ui_checkout_redirect": true,
+  "stripe_total_visible": true,
+  "unsigned_webhook_status": 400,
+  "preview_noindex": true
+}

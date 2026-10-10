@@ -6,22 +6,27 @@
   "scripts": {
     "dev": "npm run build && wrangler dev --local --port 8787",
     "build": "vite build",
-    "test": "node --test",
+    "test": "node --test test/*.test.js",
     "smoke": "node scripts/browser-smoke.mjs",
     "smoke:fallback": "node scripts/fallback-smoke.mjs",
     "render:turntables": "node scripts/render-turntables.mjs",
     "deploy": "npm run build && wrangler deploy",
     "deploy:preview": "npm run build && wrangler deploy --config wrangler.preview.jsonc",
-    "seed:stripe": "node scripts/seed-stripe.mjs"
+    "seed:stripe": "node scripts/seed-stripe.mjs",
+    "test:runtime": "vitest run",
+    "deploy:stripe-sandbox": "npm run build && wrangler deploy --config wrangler.stripe-sandbox.jsonc"
   },
   "dependencies": {
     "@fontsource/dm-sans": "^5.3.0",
     "@fontsource/space-grotesk": "^5.3.0",
-    "three": "^0.181.0"
+    "three": "^0.181.0",
+    "stripe": "^23.0.0"
   },
   "devDependencies": {
     "playwright-core": "^1.64.0",
     "vite": "^7.1.0",
-    "wrangler": "^4.40.0"
+    "wrangler": "^4.40.0",
+    "@cloudflare/vitest-plugin": "^1.4.0",
+    "vitest": "^4.1.11"
   }
 }

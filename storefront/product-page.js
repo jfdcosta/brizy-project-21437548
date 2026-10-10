@@ -21,7 +21,7 @@ export async function productPage({ getCatalog, addToCart, money, catalogNote })
   $('#product-subtitle').textContent = product.subtitle || product.description;
   $('#product-description').textContent = product.description;
   $('#product-label').textContent = product.image_kind === 'render' ? 'Concept preview' : 'Watch charging docks';
-  $('#product-store-note').textContent = catalogNote(result.mode);
+  $('#product-store-note').textContent = catalogNote(result);
   for (const highlight of product.highlights || []) $('#product-highlights').append(node('li', '', highlight));
   const isPrototype = product.availability === 'prototype';
   const add = $('#product-add');
@@ -32,7 +32,9 @@ export async function productPage({ getCatalog, addToCart, money, catalogNote })
     $('#product-primary').textContent = 'Check compatibility';
   } else {
     $('#product-price').textContent = money(product.unit_amount, product.currency);
-    $('#product-availability').textContent = 'Preview price · This design is still in development.';
+    $('#product-availability').textContent = result.mode === 'live'
+      ? [product.delivery_note, product.dispatch_note].filter(Boolean).join(' ')
+      : 'Preview price · Online ordering is only available on the connected store.';
     $('#product-primary').hidden = true;
     add.addEventListener('click', () => {
       addToCart(product);
