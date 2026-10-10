@@ -62,6 +62,7 @@ async function catalog(env) {
         if (!price) return null;
         const localProduct = mockProducts.find((item) => item.slug === product.metadata.slug);
         return {
+          ...localProduct,
           id: product.id,
           price_id: price.id,
           slug: product.metadata.slug || product.id,
@@ -71,7 +72,7 @@ async function catalog(env) {
           currency: price.currency,
           model: product.metadata.model || 'generic',
           accent: product.metadata.accent || '#6d8a53',
-          image: product.images?.[0] || null,
+          image: localProduct?.image || product.images?.[0] || null,
           turntable: localProduct?.turntable || null,
         };
       }).filter(Boolean)],
@@ -132,7 +133,9 @@ export default {
       if (url.pathname === '/api/order' && request.method === 'GET') return await order(request, env);
       if (url.pathname === '/api/webhook' && request.method === 'POST') return await webhook(request, env);
       if (url.pathname.startsWith('/api/')) return json({ error: 'Not found.' }, 404);
-      const asset = await env.ASSETS.fetch(request);
+      const assetUrl = new URL(request.url);
+      if (/^\/products\/[a-z0-9-]+\/?$/.test(url.pathname)) assetUrl.pathname = '/product';
+      const asset = await env.ASSETS.fetch(new Request(assetUrl, request));
       if (env.STOREFRONT_PREVIEW !== '1') return asset;
       const headers = new Headers(asset.headers);
       headers.set('x-robots-tag', 'noindex, nofollow, noarchive');

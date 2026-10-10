@@ -1,5 +1,3 @@
-import * as THREE from 'three';
-import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import '@fontsource/dm-sans/400.css';
 import '@fontsource/dm-sans/700.css';
 import '@fontsource/space-grotesk/400.css';
@@ -33,248 +31,6 @@ const showToast = (message) => {
   setTimeout(() => node.classList.remove('show'), 3000);
 };
 
-function makeModel(product) {
-  const group = new THREE.Group();
-  const color = new THREE.Color(product.accent || '#6d8a53');
-  const material = new THREE.MeshStandardMaterial({ color, metalness: .13, roughness: .57 });
-  const detail = new THREE.MeshStandardMaterial({ color: '#d7ddc8', metalness: .35, roughness: .32 });
-  const dark = new THREE.MeshStandardMaterial({ color: '#29312b', metalness: .2, roughness: .4 });
-  const add = (geometry, mat, position = [0, 0, 0], rotation = [0, 0, 0]) => {
-    const mesh = new THREE.Mesh(geometry, mat);
-    mesh.position.set(...position);
-    mesh.rotation.set(...rotation);
-    mesh.castShadow = true;
-    mesh.receiveShadow = true;
-    group.add(mesh);
-    return mesh;
-  };
-  if (product.model === 'bottle') {
-    add(new THREE.CylinderGeometry(.67, .75, 2.25, 48), material, [0, 0, 0]);
-    add(new THREE.CylinderGeometry(.42, .45, .48, 48), detail, [0, 1.36, 0]);
-    add(new THREE.CylinderGeometry(.44, .44, .18, 48), dark, [0, 1.68, 0]);
-    add(new THREE.TorusGeometry(.7, .04, 12, 48), dark, [0, -.93, 0], [Math.PI / 2, 0, 0]);
-    add(new THREE.BoxGeometry(.68, .15, .035), detail, [0, .15, .67]);
-  } else if (product.model === 'desk') {
-    add(new THREE.BoxGeometry(2.35, .23, 1.55), material, [0, -.6, 0]);
-    add(new THREE.BoxGeometry(.16, .7, 1.42), material, [-1.08, -.13, 0]);
-    add(new THREE.BoxGeometry(.16, .7, 1.42), material, [1.08, -.13, 0]);
-    add(new THREE.BoxGeometry(2.05, .7, .16), material, [0, -.13, -.65]);
-    add(new THREE.BoxGeometry(.1, .66, 1.3), detail, [.25, -.11, 0]);
-    add(new THREE.CylinderGeometry(.35, .35, .15, 32), dark, [-.45, -.38, .05]);
-  } else {
-    const points = [];
-    for (let index = 0; index <= 96; index++) {
-      const theta = (index / 96) * Math.PI * 2;
-      points.push(new THREE.Vector3(Math.cos(theta) * 1.25, Math.sin(theta) * .76, Math.sin(theta) * .15));
-    }
-    add(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(points, true), 120, .22, 12, true), material);
-    add(new THREE.BoxGeometry(.42, .47, .5), dark, [0, -.79, 0]);
-    add(new THREE.BoxGeometry(.27, .35, .53), detail, [0, -.79, .03]);
-  }
-  return group;
-}
-
-const modelCache = new Map();
-async function loadDisplayModel(product) {
-  if (!modelCache.has(product.model3d)) modelCache.set(product.model3d, new GLTFLoader().loadAsync(product.model3d));
-  const gltf = await modelCache.get(product.model3d);
-  const actualParts = gltf.scene.clone(true);
-  actualParts.traverse((part) => {
-    if (part.isMesh) { part.castShadow = true; part.receiveShadow = true; }
-  });
-  const bounds = new THREE.Box3().setFromObject(actualParts);
-  const center = bounds.getCenter(new THREE.Vector3());
-  const size = bounds.getSize(new THREE.Vector3());
-  actualParts.position.sub(center);
-  const wrapper = new THREE.Group();
-  wrapper.add(actualParts);
-  wrapper.scale.setScalar(3.3 / Math.max(size.x, size.y, size.z));
-  wrapper.rotation.y = Math.PI + 0.35;
-  return wrapper;
-}
-
-let webglAvailable = true;
-
-function createTurntable(canvas, product, interactive) {
-  const image = element('img', 'turntable-image');
-  image.draggable = false;
-  image.tabIndex = interactive ? 0 : -1;
-  canvas.replaceWith(image);
-  let current = product;
-  let frame = 0;
-  let zoom = 1;
-  let dragging = false;
-  let lastX = 0;
-  let controls;
-  const frameUrl = (item, index) => `${item.turntable.base}/${String(index).padStart(2, '0')}.webp`;
-  const showFrame = () => {
-    image.src = current.turntable ? frameUrl(current, frame) : current.image || '';
-    image.dataset.frame = String(frame);
-  };
-  const setProduct = (next) => {
-    current = next;
-    frame = 0;
-    image.alt = next.turntable ? `Interactive 360 degree view of ${next.name}` : `Photograph of ${next.name}`;
-    image.dataset.modelSource = next.turntable ? 'turntable' : 'photo';
-    image.dataset.modelStatus = 'ready';
-    showFrame();
-    if (controls) {
-      const [left, right] = controls.querySelectorAll('button');
-      left.setAttribute('aria-label', `Rotate ${next.name} left`);
-      right.setAttribute('aria-label', `Rotate ${next.name} right`);
-    }
-    if (next.turntable) {
-      for (let index = 1; index < next.turntable.frames; index++) {
-        const preload = new Image();
-        preload.src = frameUrl(next, index);
-      }
-    }
-  };
-  const advance = (steps) => {
-    if (!current.turntable) return;
-    frame = (frame + steps % current.turntable.frames + current.turntable.frames) % current.turntable.frames;
-    showFrame();
-  };
-  if (interactive) {
-    controls = element('div', 'turntable-controls');
-    const left = element('button', '', '←');
-    const right = element('button', '', '→');
-    left.type = right.type = 'button';
-    left.setAttribute('aria-label', `Rotate ${product.name} left`);
-    right.setAttribute('aria-label', `Rotate ${product.name} right`);
-    left.addEventListener('click', () => advance(-1));
-    right.addEventListener('click', () => advance(1));
-    controls.append(left, right);
-    image.parentElement.append(controls);
-    image.addEventListener('pointerdown', (event) => {
-      dragging = true;
-      lastX = event.clientX;
-      image.setPointerCapture(event.pointerId);
-    });
-    image.addEventListener('pointermove', (event) => {
-      if (!dragging) return;
-      const steps = Math.trunc((event.clientX - lastX) / 16);
-      if (!steps) return;
-      advance(steps);
-      lastX += steps * 16;
-    });
-    image.addEventListener('pointerup', () => { dragging = false; });
-    image.addEventListener('pointercancel', () => { dragging = false; });
-    image.addEventListener('keydown', (event) => {
-      if (event.key === 'ArrowLeft') { advance(-1); event.preventDefault(); }
-      if (event.key === 'ArrowRight') { advance(1); event.preventDefault(); }
-    });
-    image.addEventListener('wheel', (event) => {
-      event.preventDefault();
-      zoom = Math.max(1, Math.min(1.8, zoom - event.deltaY * .001));
-      image.style.transform = `scale(${zoom})`;
-    }, { passive: false });
-  }
-  setProduct(product);
-  return { setProduct };
-}
-
-export function createViewer(canvas, product, interactive = false) {
-  if (!webglAvailable && product.turntable) return createTurntable(canvas, product, interactive);
-  let renderer;
-  try { renderer = new THREE.WebGLRenderer({ canvas, alpha: true, antialias: true }); }
-  catch {
-    webglAvailable = false;
-    if (product.turntable) return createTurntable(canvas, product, interactive);
-    if (product.image) {
-      const photo = element('img', 'viewer-fallback-photo');
-      photo.src = product.image;
-      photo.alt = `Photograph of ${product.name}`;
-      canvas.replaceWith(photo);
-    } else canvas.replaceWith(element('div', 'viewer-fallback', product.name));
-    return { setProduct() {} };
-  }
-  renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
-  renderer.shadowMap.enabled = true;
-  renderer.outputColorSpace = THREE.SRGBColorSpace;
-  const scene = new THREE.Scene();
-  const camera = new THREE.PerspectiveCamera(38, 1, .1, 100);
-  camera.position.set(0, 1.15, 6.4);
-  camera.lookAt(0, 0, 0);
-  scene.add(new THREE.AmbientLight('#ffffff', 2.1));
-  const light = new THREE.DirectionalLight('#fff5e6', 3.2);
-  light.position.set(3, 5, 5);
-  light.castShadow = true;
-  scene.add(light);
-  const rim = new THREE.DirectionalLight('#c9e4dc', 2.0);
-  rim.position.set(-4, 2, -4);
-  scene.add(rim);
-  let model = new THREE.Group();
-  scene.add(model);
-  let loadVersion = 0;
-  const setProduct = (next) => {
-    const version = ++loadVersion;
-    canvas.parentElement.querySelector('.viewer-fallback-photo')?.remove();
-    canvas.setAttribute('aria-busy', next.model3d ? 'true' : 'false');
-    canvas.dataset.modelStatus = next.model3d ? 'loading' : 'ready';
-    const apply = (nextModel) => {
-      if (version !== loadVersion) return;
-      scene.remove(model);
-      model = nextModel;
-      scene.add(model);
-      canvas.dataset.modelStatus = 'ready';
-      canvas.dataset.modelSource = next.model3d ? 'actual' : 'concept';
-      canvas.setAttribute('aria-busy', 'false');
-    };
-    if (!next.model3d) { apply(makeModel(next)); return; }
-    loadDisplayModel(next).then(apply).catch((error) => {
-      if (version !== loadVersion) return;
-      console.error('3D model could not load', error);
-      canvas.dataset.modelStatus = 'error';
-      canvas.setAttribute('aria-busy', 'false');
-      if (next.image) {
-        const photo = element('img', 'viewer-fallback-photo');
-        photo.src = next.image;
-        photo.alt = `Photograph of ${next.name}`;
-        canvas.parentElement.append(photo);
-      }
-    });
-  };
-  let dragging = false, lastX = 0, lastY = 0;
-  if (interactive) {
-    canvas.addEventListener('pointerdown', (event) => { dragging = true; lastX = event.clientX; lastY = event.clientY; canvas.setPointerCapture(event.pointerId); });
-    canvas.addEventListener('pointermove', (event) => {
-      if (!dragging) return;
-      model.rotation.y += (event.clientX - lastX) * .008;
-      model.rotation.x = Math.max(-.6, Math.min(.6, model.rotation.x + (event.clientY - lastY) * .006));
-      lastX = event.clientX; lastY = event.clientY;
-    });
-    canvas.addEventListener('pointerup', () => { dragging = false; });
-    canvas.addEventListener('wheel', (event) => {
-      event.preventDefault();
-      camera.position.z = Math.max(4.2, Math.min(8.4, camera.position.z + event.deltaY * .004));
-    }, { passive: false });
-  }
-  const resize = () => {
-    const { width, height } = canvas.getBoundingClientRect();
-    if (!width || !height) return;
-    renderer.setSize(width, height, false);
-    camera.aspect = width / height;
-    camera.updateProjectionMatrix();
-  };
-  new ResizeObserver(resize).observe(canvas);
-  resize();
-  let previous = 0;
-  const animate = (time) => {
-    if (!dragging) model.rotation.y += Math.min((time - previous) || 0, 100) * .00018;
-    previous = time;
-    renderer.render(scene, camera);
-    requestAnimationFrame(animate);
-  };
-  requestAnimationFrame(animate);
-  setProduct(product);
-  return {
-    setProduct,
-    setYaw(yaw) { model.rotation.y = yaw; },
-    capture() { renderer.render(scene, camera); return canvas.toDataURL('image/webp', .8); },
-  };
-}
-
 async function getCatalog() {
   const response = await fetch('/api/catalog');
   if (!response.ok) throw new Error('The collection could not load.');
@@ -288,91 +44,54 @@ function addToCart(product) {
   if (existing) existing.quantity = Math.min(existing.quantity + 1, 10);
   else items.push({ slug: product.slug, quantity: 1 });
   saveCart(items);
-  showToast(`${product.name} added to your bag`);
+  showToast(`${product.name} added to your cart`);
 }
+
+const productUrl = (product) => product.slug === 'jdc-duo' ? '/jdc-duo' : `/products/${encodeURIComponent(product.slug)}`;
+const catalogNote = (mode) => mode === 'test'
+  ? 'Preview store · Test purchases only. No real charges.'
+  : 'Preview store · Online ordering is coming soon.';
 
 async function home() {
   const grid = $('#product-grid');
   let result;
   try { result = await getCatalog(); }
   catch (error) { grid.textContent = error.message; return; }
-  const products = result.products;
   grid.replaceChildren();
-  if (!products.length) { grid.textContent = 'The collection is coming soon.'; return; }
-  const note = $('#mode-note');
-  note.textContent = result.mode === 'mock' ? 'Prototype catalog: checkout becomes available when Stripe test products and a payment key are connected.' : result.mode === 'test' ? 'Stripe test mode: use test cards only. No real charges will be made.' : 'Live checkout is disabled while fulfillment and store policies are unfinished.';
-  const viewerProducts = products.filter((product) => product.model3d || product.availability !== 'prototype');
-  let selected = 0;
-  $('#featured-total').textContent = String(viewerProducts.length).padStart(2, '0');
-  let heroViewer;
-  if (viewerProducts.length) heroViewer = createViewer($('#product-canvas'), viewerProducts[0], true);
-  else {
-    const photo = element('img', 'hero-photo');
-    photo.src = products[0].image;
-    photo.alt = `Photograph of ${products[0].name}`;
-    $('#product-canvas').replaceWith(photo);
-    $('.stage-label').textContent = 'WORKING PROTOTYPE';
-    $('.stage-controls').hidden = true;
-  }
-  const select = (index) => {
-    selected = (index + viewerProducts.length) % viewerProducts.length;
-    heroViewer.setProduct(viewerProducts[selected]);
-    $('#featured-number').textContent = String(selected + 1).padStart(2, '0');
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-  };
-  if (viewerProducts.length) {
-    $('#prev-model').addEventListener('click', () => select(selected - 1));
-    $('#next-model').addEventListener('click', () => select(selected + 1));
-  }
-  if (new URLSearchParams(location.search).has('capture')) window.__turntableCapture = { viewer: heroViewer, products: viewerProducts };
-  products.forEach((product, index) => {
-    const isPrototype = product.availability === 'prototype';
+  if (!result.products.length) { grid.textContent = 'Our products are coming soon.'; return; }
+  $('#mode-note').textContent = catalogNote(result.mode);
+  for (const product of result.products) {
     const card = element('article', 'product-card');
-    const art = element('div', 'product-art');
-    art.style.backgroundColor = product.accent ? `${product.accent}22` : '#dfe6d7';
-    art.append(element('span', 'product-number', `${String(index + 1).padStart(2, '0')} / ${product.model3d ? 'ACTUAL 3D' : isPrototype ? 'REAL PROTOTYPE' : '3D VIEW'}`));
-    let canvas;
-    if (isPrototype && !product.model3d && product.image) {
-      const photo = element('img', 'product-photo');
-      photo.src = product.image;
-      photo.alt = `Printed ${product.name} watch docks mounted on a pegboard`;
-      photo.loading = 'lazy';
-      art.append(photo);
-    } else {
-      canvas = element('canvas');
-      canvas.setAttribute('aria-label', `3D preview of ${product.name}`);
-      art.append(canvas);
-    }
+    const art = element('a', 'product-art');
+    art.href = productUrl(product);
+    art.setAttribute('aria-label', `View ${product.name}`);
+    const photo = element('img', 'product-photo');
+    const picture = product.image || (product.turntable ? `${product.turntable.base}/00.webp` : null);
+    if (picture) photo.src = picture;
+    photo.alt = product.image_alt || product.name;
+    photo.loading = 'lazy';
+    photo.width = 800;
+    photo.height = 600;
+    art.append(photo);
+    if (product.image_kind === 'render') art.append(element('span', 'product-badge', 'Concept preview'));
     card.append(art);
     const info = element('div', 'product-info');
-    const copy = element('div');
-    copy.append(element('h3', '', product.name), element('p', '', product.description));
-    info.append(copy, element('strong', '', isPrototype ? 'Not for sale' : money(product.unit_amount, product.currency)));
+    const title = element('h3');
+    const link = element('a', '', product.name);
+    link.href = productUrl(product);
+    title.append(link);
+    info.append(title, element('p', '', product.summary || product.description));
+    const availability = product.availability === 'prototype' ? 'Coming soon' : `${money(product.unit_amount, product.currency)} · Preview price`;
+    info.append(element('strong', 'product-price', availability));
     card.append(info);
     const actions = element('div', 'product-actions');
-    if (isPrototype) {
-      if (product.model3d) {
-        const view = element('button', '', 'Explore in 3D →');
-        view.type = 'button';
-        view.addEventListener('click', () => select(viewerProducts.findIndex((item) => item.slug === product.slug)));
-        actions.append(view);
-      }
-      const detail = element('a', 'product-detail-link', 'Details →');
-      detail.href = product.detail_url;
-      actions.append(detail);
-    } else {
-      const view = element('button', '', 'Explore in 3D →');
-      view.type = 'button';
-      view.addEventListener('click', () => select(viewerProducts.findIndex((item) => item.slug === product.slug)));
-      const add = element('button', '', 'Add to bag +');
-      add.type = 'button';
-      add.addEventListener('click', () => addToCart(product));
-      actions.append(view, add);
-    }
+    const detail = element('a', 'button button-outline', 'View product');
+    detail.href = productUrl(product);
+    detail.setAttribute('aria-label', `View ${product.name} details`);
+    actions.append(detail);
     card.append(actions);
     grid.append(card);
-    if (canvas) createViewer(canvas, product, false);
-  });
+  }
 }
 
 async function cartPage() {
@@ -389,7 +108,7 @@ async function cartPage() {
     });
     saveCart(items);
     list.replaceChildren();
-    if (!items.length) list.append(element('p', 'empty-cart', 'Your bag is empty. Find something to explore in the collection.'));
+    if (!items.length) list.append(element('p', 'empty-cart', 'Your cart is empty. Browse products in the shop.'));
     let subtotal = 0;
     for (const item of items) {
       const product = bySlug.get(item.slug);
@@ -415,7 +134,7 @@ async function cartPage() {
     }
     $('#subtotal').textContent = money(subtotal, result.products[0]?.currency || 'gbp');
     $('#checkout-button').disabled = !items.length || !result.checkout_enabled;
-    if (result.mode === 'mock') message.textContent = 'Checkout is awaiting a connected Stripe account.';
+    if (result.mode === 'mock') message.textContent = 'Online ordering is coming soon.';
     else if (result.mode === 'test') message.textContent = 'Test mode: no real charges will be made.';
     else message.textContent = 'Live checkout is disabled while fulfillment and store policies are unfinished.';
   };
@@ -470,3 +189,7 @@ saveCart(cart());
 if (document.body.dataset.page === 'home') home();
 if (document.body.dataset.page === 'cart') cartPage();
 if (document.body.dataset.page === 'success') successPage();
+
+if (document.body.dataset.page === 'product') {
+  import('./product-page.js').then(({ productPage }) => productPage({ getCatalog, addToCart, money, catalogNote }));
+}

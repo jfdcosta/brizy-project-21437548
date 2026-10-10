@@ -1,6 +1,6 @@
 # Eco Layer Labs storefront prototype
 
-The Cloudflare Worker storefront is in `storefront/` and `src/`. The original Brizy export remains at the repository root. The current catalog contains JDC Duo as a non-purchasable working prototype alongside three concept products with prototype prices. JDC Duo has an interactive 3D display of the four current dock parts, assembled from the local Blender source and revised Galaxy insert; watches and chargers are absent from that display. The other 3D product views are procedural concepts. When a browser cannot create a WebGL context, the storefront uses draggable turntable frames rendered from the same models. `/quote.html` offers a browser-only STL preview with geometry measurements, but quote requests and pricing are not enabled.
+The Cloudflare Worker storefront is in `storefront/` and `src/`. The original Brizy export remains at the repository root. The current catalog contains JDC Duo as a non-purchasable working prototype alongside three concept products with prototype prices. The homepage leads with a real JDC Duo photo and a product CTA. Collection cards use static pictures and link to product pages; they create no viewers and fetch no models. Each product page starts with a photo gallery and loads `viewer.js` through a dynamic import only when its 3D thumbnail is selected. JDC Duo's 3D display shows the four current dock parts, assembled from the local Blender source and revised Galaxy insert; watches and chargers are absent from that display. The other product images and 3D views are concept renders. When a browser cannot create a WebGL context, the viewer uses draggable turntable frames rendered from the same models. `/quote.html` offers a browser-only STL preview with geometry measurements, but quote requests and pricing are not enabled.
 
 ## Local development
 
@@ -13,7 +13,7 @@ npm run build
 XDG_CONFIG_HOME=/tmp/eco-storefront-config WRANGLER_SEND_METRICS=false npx wrangler dev --local --port 8787
 ```
 
-Open the local app at port 8787. `npm test` checks cart validation, Stripe form creation, webhook signatures, and the catalog-to-checkout flow. `npm run smoke` checks the WebGL view and cart; `npm run smoke:fallback` checks the rotating view with WebGL disabled.
+Open the local app at port 8787. `npm test` checks cart validation, Stripe form creation, webhook signatures, and the catalog-to-checkout flow. `npm run smoke` checks the static collection, photo-first product galleries, absence of early 3D requests, on-demand WebGL view, mobile layout and cart. `npm run smoke:fallback` checks the gallery's rotating view with WebGL disabled. `/jdc-duo` preserves the existing product URL; the concept pages use `/products/:slug`, served through `product.html`.
 
 ## Stripe catalog and payments
 
@@ -29,7 +29,7 @@ Test keys permit prototype checkout. Live checkout is blocked in code until dura
 
 ## Cloudflare deployment
 
-The isolated public preview is at https://eco-storefront-preview.jfdcosta-jdc.workers.dev/ and uses `wrangler.preview.jsonc`. Run `npm run deploy:preview` to update it. That config routes all preview requests through the Worker so responses carry `X-Robots-Tag: noindex, nofollow, noarchive`. The preview has no Stripe key, no production domain route, and disabled checkout. Its deployed home, JDC Duo 3D detail page, API catalog, and browser cart flow were checked on 10 October 2026.
+The isolated public preview is at https://eco-storefront-preview.jfdcosta-jdc.workers.dev/ and uses `wrangler.preview.jsonc`. Run `npm run deploy:preview` to update it. That config routes all preview requests through the Worker so responses carry `X-Robots-Tag: noindex, nofollow, noarchive`. The preview has no Stripe key, no production domain route, and disabled checkout. The simplified homepage, all four product routes, photo-first JDC Duo gallery, on-demand WebGL and Chrome fallback views, mobile layout and cart passed deployed checks on 10 October 2026. The deployment version is `0d52e7b7-3638-402e-b536-2e1aa41e08a6`.
 
 The JDC Duo browser model is `storefront/public/models/jdc-duo.glb`. `scripts/export-jdc-duo.py` regenerates it with Blender from the editable assembly, the fitted Galaxy R2 insert, and the dock parameters. The source files live in the local SKADIS Watch Dock project; the export script accepts their paths as arguments. This display model is separate from the unpublished MakerWorld print-profile draft.
 

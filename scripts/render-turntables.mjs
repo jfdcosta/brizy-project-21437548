@@ -21,16 +21,16 @@ const browser = await chromium.launch({
 
 try {
   const page = await browser.newPage({ viewport: { width: 1800, height: 900 }, deviceScaleFactor: 1 });
-  await page.goto(`${base}/?capture=1`, { waitUntil: 'domcontentloaded' });
+  await page.goto(`${base}/jdc-duo?capture=1`, { waitUntil: 'domcontentloaded' });
   await page.waitForFunction(() => window.__turntableCapture?.products?.length > 0);
-  await page.addStyleTag({ content: '.hero-stage{height:800px;min-height:800px}' });
+  await page.addStyleTag({ content: '.product-layout{grid-template-columns:936px 1fr}.gallery-stage{height:868px;min-height:868px;aspect-ratio:auto}' });
   const products = await page.evaluate(() => window.__turntableCapture.products);
 
   for (const product of products.filter((item) => item.turntable)) {
     const output = join('storefront/public', product.turntable.base.replace(/^\//, ''));
     await mkdir(output, { recursive: true });
     await page.evaluate((item) => window.__turntableCapture.viewer.setProduct(item), product);
-    await page.waitForFunction(() => document.querySelector('#product-canvas')?.dataset.modelStatus === 'ready');
+    await page.waitForFunction(() => document.querySelector('#product-viewer-canvas')?.dataset.modelStatus === 'ready');
     for (let frame = 0; frame < product.turntable.frames; frame++) {
       const yaw = (product.model3d ? Math.PI + 0.35 : 0) + frame * Math.PI * 2 / product.turntable.frames;
       const dataUrl = await page.evaluate((angle) => {

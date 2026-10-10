@@ -3,43 +3,40 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="theme-color" content="#eaece5">
-  <title>Eco Layer Labs — Objects for a lighter life</title>
-  <meta name="description" content="Explore considered everyday objects in interactive 3D.">
+  <meta name="theme-color" content="#eaede5">
+  <title>Eco Layer Labs — Practical products for everyday life</title>
+  <meta name="description" content="See JDC Duo watch charging docks and explore practical designs from Eco Layer Labs.">
   <link rel="stylesheet" href="/style.css">
   <script type="module" src="/app.js"></script>
 </head>
 <body data-page="home">
+  <a class="skip-link" href="#main">Skip to content</a>
   <header class="site-header">
     <a class="brand" href="/" aria-label="Eco Layer Labs home">ECO<span>LAYER</span>LABS<i></i></a>
-    <nav aria-label="Primary navigation"><a href="#collection">Collection</a><a href="/quote.html">Custom quote</a><a href="#approach">Our approach</a></nav>
-    <a class="cart-link" href="/cart.html">Bag <span data-cart-count>0</span></a>
+    <nav aria-label="Primary navigation"><a href="#collection">Shop</a><a href="/quote.html">Custom printing</a><a href="#approach">About us</a></nav>
+    <a class="cart-link" href="/cart.html">Cart <span data-cart-count>0</span></a>
   </header>
-  <main>
-    <section class="hero">
+  <main id="main">
+    <section class="hero" aria-labelledby="hero-heading">
       <div class="hero-copy">
-        <div class="eyebrow"><span class="eyebrow-line"></span> MATERIALS. MOTION. MEANING.</div>
-        <h1>Objects for<br>a <em>lighter</em> life<span class="period">.</span></h1>
-        <p>Useful things, thoughtfully imagined. Explore every angle before you bring one home.</p>
-        <a class="button button-dark" href="#collection">Explore the collection <span aria-hidden="true">→</span></a>
-        <div class="hero-index">01 / INTERACTIVE COLLECTION</div>
+        <p class="eyebrow">JDC Duo watch charging docks</p>
+        <h1 id="hero-heading">Keep your watches <em>together.</em></h1>
+        <p>A tidy place for your Pixel Watch and Galaxy Watch chargers, mounted on your IKEA SKÅDIS pegboard.</p>
+        <div class="hero-actions"><a class="button button-dark" href="/jdc-duo">View JDC Duo <span aria-hidden="true">→</span></a><a class="text-link" href="#collection">Browse all products</a></div>
+        <p class="hero-note">Working prototype · Coming soon</p>
       </div>
-      <div class="hero-stage">
-        <canvas id="product-canvas" aria-label="Interactive 3D product preview"></canvas>
-        <div class="stage-label"><span class="stage-dot"></span> DRAG TO ROTATE <span class="stage-divider">/</span> SCROLL TO ZOOM</div>
-        <div class="stage-counter"><span id="featured-number">01</span> / <span id="featured-total">03</span></div>
-        <div class="stage-controls"><button id="prev-model" aria-label="Previous product">←</button><button id="next-model" aria-label="Next product">→</button></div>
-      </div>
+      <a class="hero-image" href="/jdc-duo" aria-label="See JDC Duo product details"><img src="/images/jdc-duo-mounted.jpg" width="1448" height="1086" fetchpriority="high" alt="JDC Duo watch docks mounted on a pegboard, holding a Pixel Watch and Galaxy Watch"></a>
     </section>
-    <section class="ticker" aria-label="Store values"><span>BUILT TO LAST</span><b>✳</b><span>MADE TO MATTER</span><b>✳</b><span>EXPLORE IN 3D</span><b>✳</b><span>BUILT TO LAST</span></section>
-    <section class="collection section-pad" id="collection">
-      <div class="section-heading"><div><div class="eyebrow">THE COLLECTION / 001</div><h2>Everyday, <em>reimagined.</em></h2></div><p>Explore interactive concepts and see real photos of working prototypes.</p></div>
-      <div class="product-grid" id="product-grid" aria-live="polite"><p class="loading">Loading the collection…</p></div>
+    <section class="collection section-pad" id="collection" aria-labelledby="collection-heading">
+      <div class="section-heading"><div><h2 id="collection-heading">Our products</h2><p>Start with JDC Duo. More practical designs are in development.</p></div></div>
+      <div class="product-grid" id="product-grid" aria-live="polite"><p class="loading">Loading products…</p></div>
       <p class="mode-note" id="mode-note"></p>
     </section>
-    <section class="approach section-pad" id="approach"><div class="eyebrow">OUR APPROACH / 002</div><div class="approach-grid"><h2>Better by<br><em>design.</em></h2><div><p>We believe an object should earn its place in your life. Each prototype is shaped around purpose, durability, and a little joy.</p><div class="approach-points"><div><span>01</span><strong>Considered form</strong><small>Simple shapes with thoughtful details.</small></div><div><span>02</span><strong>See before you buy</strong><small>Interactive previews reveal every angle.</small></div><div><span>03</span><strong>Secure checkout</strong><small>Payments are handled by Stripe Checkout.</small></div></div></div></div></section>
+    <section class="approach section-pad" id="approach" aria-labelledby="approach-heading">
+      <div class="approach-grid"><div><p class="eyebrow">About Eco Layer Labs</p><h2 id="approach-heading">Practical ideas.<br>Useful products.</h2></div><div><p>We design and make 3D printed products for everyday tasks. We start with a working prototype, check how it fits, and refine the details.</p><div class="approach-points"><div><strong>See what you’re getting</strong><p>Clear photos, product details and compatibility information.</p></div><div><strong>Have your own design?</strong><p><a href="/quote.html">Preview a file for custom printing →</a></p></div></div></div></div>
+    </section>
   </main>
-  <footer><a class="brand" href="/">ECO<span>LAYER</span>LABS<i></i></a><p>Useful things, thoughtfully imagined. <a href="/quote.html">Preview a custom STL</a></p><small>© 2026 Eco Layer Labs. Prototype storefront.</small></footer>
+  <footer><a class="brand" href="/">ECO<span>LAYER</span>LABS<i></i></a><p>Practical products for everyday life.</p><small>© 2026 Eco Layer Labs. Preview store.</small></footer>
   <div class="toast" id="toast" role="status" aria-live="polite"></div>
 </body>
 </html>

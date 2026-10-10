@@ -12,9 +12,9 @@ npm test
 npm run dev
 ```
 
-Open `http://127.0.0.1:8787/` in your browser. The site shows a non-purchasable JDC Duo prototype with an interactive 3D view of the actual dock parts, plus three concept products with procedural 3D previews. Chrome profiles with WebGL disabled get draggable 360-degree views of the same models. `/quote.html` also previews a local STL and measures its envelope and enclosed mesh volume; it does not upload the file or request a production quote. Add to bag works for the concept products; checkout stays disabled until a Stripe test key is connected.
+Open `http://127.0.0.1:8787/` in your browser. The homepage and collection show static pictures; JDC Duo uses its actual printed product photo. Each product opens a familiar photo gallery with a 3D thumbnail. The viewer code and models load only when that thumbnail is selected. Chrome profiles with WebGL disabled get draggable 360-degree views of the same models. JDC Duo remains a non-purchasable prototype, while the other three listings show concept renders and preview prices. `/quote.html` previews a local STL and measures its envelope and enclosed mesh volume; it does not upload the file or request a production quote. Add to cart works for the concept products; checkout stays disabled until a Stripe test key is connected.
 
-To run the browser smoke check, install Chrome or Chromium and run `npm run smoke` while the server is running. If the executable is not in a standard location, set `CHROME_BIN` to its path.
+To run the browser smoke check, install Chrome or Chromium and run `npm run smoke` while the server is running. It checks that browsing photos never fetches the 3D viewer or JDC Duo model, then opens the 3D thumbnail, checks mobile layout and tests the cart. `npm run smoke:fallback` checks the same gallery with WebGL disabled. If the executable is not in a standard location, set `CHROME_BIN` to its path.
 
 ## Connect test payments
 

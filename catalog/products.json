@@ -2,13 +2,60 @@
   {
     "slug": "jdc-duo",
     "name": "JDC Duo",
-    "description": "A 3D printed SKÅDIS pair for Pixel Watch 3 and Galaxy Watch4 chargers. Working prototype.",
+    "description": "A matching pair of watch charging docks that keeps your watches in one place and your desk clear.",
     "availability": "prototype",
-    "detail_url": "/jdc-duo.html",
+    "detail_url": "/jdc-duo",
     "image": "/images/jdc-duo-mounted.jpg",
     "model3d": "/models/jdc-duo.glb",
-    "turntable": { "base": "/turntable/jdc-duo", "frames": 24 },
-    "accent": "#252a22"
+    "turntable": {
+      "base": "/turntable/jdc-duo",
+      "frames": 24
+    },
+    "accent": "#252a22",
+    "summary": "Keep two watch chargers together on your IKEA SKÅDIS pegboard.",
+    "image_alt": "Printed JDC Duo docks mounted on a pegboard with a Pixel Watch and Galaxy Watch",
+    "image_kind": "photo",
+    "subtitle": "Watch charging docks for your pegboard",
+    "highlights": [
+      "Fits the original Pixel Watch 3 (45 mm) and Galaxy Watch4 (44 mm) charging pucks.",
+      "Mounts on an IKEA SKÅDIS pegboard.",
+      "Side openings let you place your watch in the dock with its bracelet closed."
+    ],
+    "gallery": [
+      {
+        "src": "/images/jdc-duo-mounted.jpg",
+        "label": "In use",
+        "alt": "JDC Duo mounted on a pegboard with two watches",
+        "caption": "Printed JDC Duo shown with watches on an IKEA SKÅDIS pegboard."
+      },
+      {
+        "src": "/images/jdc-duo-chargers.png",
+        "label": "Charger fit",
+        "alt": "JDC Duo with the original watch charging pucks seated in the docks",
+        "caption": "Removable inserts hold the original watch charging pucks."
+      },
+      {
+        "src": "/images/jdc-duo-angle.png",
+        "label": "Side view",
+        "alt": "Side view of the printed JDC Duo watch docks",
+        "caption": "Side openings make room for a closed watch bracelet."
+      }
+    ],
+    "details": [
+      {
+        "title": "Compatibility",
+        "text": "Made for the original charging pucks supplied with the Pixel Watch 3 (45 mm) and Galaxy Watch4 (44 mm), on an IKEA SKÅDIS pegboard. Other watches and charger revisions have not been checked."
+      },
+      {
+        "title": "What is included",
+        "text": "The design is a pair of docks with removable charger inserts. Watches, charging pucks, cables and the pegboard shown in the photos are not included."
+      },
+      {
+        "title": "Current status",
+        "text": "The PLA prototype has been printed and fitted to the creator’s board. The Pixel insert fitted, and the revised Galaxy insert held its charger in a physical fit check. Long term charging, heat, load and durability checks are still in progress."
+      }
+    ],
+    "independent_note": "Independent design. Not an IKEA, Google or Samsung product."
   },
   {
     "slug": "eco-strap",
@@ -17,8 +64,45 @@
     "unit_amount": 1800,
     "currency": "gbp",
     "model": "strap",
-    "turntable": { "base": "/turntable/eco-strap", "frames": 16 },
-    "accent": "#6d8a53"
+    "turntable": {
+      "base": "/turntable/eco-strap",
+      "frames": 16
+    },
+    "accent": "#6d8a53",
+    "summary": "A reusable strap for keeping everyday items together.",
+    "subtitle": "Reusable carry strap",
+    "image": "/turntable/eco-strap/00.webp",
+    "image_alt": "Concept render of Eco Strap",
+    "image_kind": "render",
+    "detail_url": "/products/eco-strap",
+    "highlights": [
+      "Flexible loop with a simple fastening point.",
+      "A concept design; dimensions and material are still being developed."
+    ],
+    "gallery": [
+      {
+        "src": "/turntable/eco-strap/00.webp",
+        "label": "Front view",
+        "alt": "Concept render of Eco Strap",
+        "caption": "Concept render. A finished product photo will be added before release."
+      },
+      {
+        "src": "/turntable/eco-strap/04.webp",
+        "label": "Side view",
+        "alt": "Side concept render of Eco Strap",
+        "caption": "Side view of the concept design."
+      }
+    ],
+    "details": [
+      {
+        "title": "About this design",
+        "text": "A reusable strap for keeping everyday items together. The images and 3D view show an early concept."
+      },
+      {
+        "title": "Before release",
+        "text": "Final dimensions, materials, availability and price will be confirmed before this product is offered for sale."
+      }
+    ]
   },
   {
     "slug": "modular-bottle",
@@ -27,8 +111,45 @@
     "unit_amount": 2800,
     "currency": "gbp",
     "model": "bottle",
-    "turntable": { "base": "/turntable/modular-bottle", "frames": 16 },
-    "accent": "#d89a65"
+    "turntable": {
+      "base": "/turntable/modular-bottle",
+      "frames": 16
+    },
+    "accent": "#d89a65",
+    "summary": "A refillable bottle concept for everyday use.",
+    "subtitle": "Refillable bottle concept",
+    "image": "/turntable/modular-bottle/00.webp",
+    "image_alt": "Concept render of Modular Bottle",
+    "image_kind": "render",
+    "detail_url": "/products/modular-bottle",
+    "highlights": [
+      "A bottle design with a removable lid.",
+      "A concept design; capacity, material and performance are still being developed."
+    ],
+    "gallery": [
+      {
+        "src": "/turntable/modular-bottle/00.webp",
+        "label": "Front view",
+        "alt": "Concept render of Modular Bottle",
+        "caption": "Concept render. A finished product photo will be added before release."
+      },
+      {
+        "src": "/turntable/modular-bottle/04.webp",
+        "label": "Side view",
+        "alt": "Side concept render of Modular Bottle",
+        "caption": "Side view of the concept design."
+      }
+    ],
+    "details": [
+      {
+        "title": "About this design",
+        "text": "A refillable bottle concept for everyday use. The images and 3D view show an early concept."
+      },
+      {
+        "title": "Before release",
+        "text": "Final dimensions, materials, availability and price will be confirmed before this product is offered for sale."
+      }
+    ]
   },
   {
     "slug": "desk-set",
@@ -37,7 +158,44 @@
     "unit_amount": 4200,
     "currency": "gbp",
     "model": "desk",
-    "turntable": { "base": "/turntable/desk-set", "frames": 16 },
-    "accent": "#6b8e98"
+    "turntable": {
+      "base": "/turntable/desk-set",
+      "frames": 16
+    },
+    "accent": "#6b8e98",
+    "summary": "A compact organiser concept for your desk.",
+    "subtitle": "Desk organiser concept",
+    "image": "/turntable/desk-set/00.webp",
+    "image_alt": "Concept render of Desk Set",
+    "image_kind": "render",
+    "detail_url": "/products/desk-set",
+    "highlights": [
+      "Separate spaces for small everyday items.",
+      "A concept design; dimensions and material are still being developed."
+    ],
+    "gallery": [
+      {
+        "src": "/turntable/desk-set/00.webp",
+        "label": "Front view",
+        "alt": "Concept render of Desk Set",
+        "caption": "Concept render. A finished product photo will be added before release."
+      },
+      {
+        "src": "/turntable/desk-set/04.webp",
+        "label": "Side view",
+        "alt": "Side concept render of Desk Set",
+        "caption": "Side view of the concept design."
+      }
+    ],
+    "details": [
+      {
+        "title": "About this design",
+        "text": "A compact organiser concept for your desk. The images and 3D view show an early concept."
+      },
+      {
+        "title": "Before release",
+        "text": "Final dimensions, materials, availability and price will be confirmed before this product is offered for sale."
+      }
+    ]
   }
 ]
